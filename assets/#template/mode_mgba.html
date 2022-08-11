@@ -1,0 +1,249 @@
+<!--
+* GPL 2021, Nenge.net All rights reserved.
+* 本代码免费使用，自行修改或发布
+-->
+<!doctype html>
+<html lang="zh-cn-hans">
+<head>
+    <meta charset="UTF-8" content-type="text/html" />
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no,width=device-width" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="assets/icon/icon.png">
+    <link rel="icon" href="assets/icon/icon.png" type="image/png" />
+    <title>MGBA Web Emulator by Retroarch</title>
+    <link rel="stylesheet" href="mgba.scss" />
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <div>菜单</div>
+            <div>添加游戏</div>
+            <div class="aa">加速</div>
+            <nav>
+                <div>添加文件</div>
+                <div>添加文件</div>
+                <p lang="en">qqq</p>
+            </nav>
+        </header>
+        <canvas id="canvas" width="240" height="160"></canvas>
+        <button class="game-setting" data-btn="onload" hidden>启动/Runnig</button>
+        <div class="game-ctrl" hidden>
+            <div class="game-ctrl-menu">
+                <span data-btn="translate" class="game-menu-btn">AI</span>
+                <span data-btn="statesave" class="game-menu-btn">即存</span>
+                <span data-btn="stateload" class="game-menu-btn">即读</span>
+                <span data-btn="settings" class="game-menu-btn">菜单</span>
+            </div>
+        <div class="vk" data-k="l">L</div>
+        <div class="vk" data-k="r">R</div>
+        <div class="vk" data-k="a">A</div>
+        <div class="vk" data-k="b">B</div>
+        <div class="vk" data-k="x">A</div>
+        <div class="vk" data-k="y">B</div>
+        <div class="vk" data-k="select">SELECT</div>
+        <div class="vk" data-k="start">START</div>
+        <div class="vk" data-k="left">←</div>
+        <div class="vk" data-k="right">→</div>
+        <div class="vk" data-k="up">↑</div>
+        <div class="vk" data-k="down">↓</div>
+        <div class="vk" data-k="ul"></div>
+        <div class="vk" data-k="ur"></div>
+        <div class="vk" data-k="dl"></div>
+        <div class="vk" data-k="dr"></div>
+            
+        </div>
+        <div class="game-list">
+            <div class="game-result"></div>
+            <h3 data-btn="closelist" class="game-list-title">点击这里关闭</h3>
+        </div>
+        <div class="game-msg" hidden></div>
+    </div>
+    <script src="assets/mgba/mgba.js?<?=time()?>"></script>
+    <script>
+        let func = async ()=>{
+            Module.wasmBinary =  new Uint8Array(await (await fetch('assets/mgba/mgba_libretro.wasm')).arrayBuffer());
+            let js = new TextDecoder().decode(new Uint8Array(await (await fetch('assets/mgba/mgba_libretro.js?'+Math.random())).arrayBuffer()));
+            js = js.replace(/\"mouse(up|down|move)\"/g,'"pointer$1"');
+            await Module.addJS(js);
+                    let CreateDataFile = (path, data, bool)=>{
+        let dir = path.split('/').slice(0, -1).join('/');
+        if (!FS.analyzePath(dir).exists){
+            let pdir = dir.split('/').slice(0, -1).join('/');
+            if (!FS.analyzePath(pdir).exists)FS.createPath('/', pdir,!0,!0);
+            FS.createPath('/', dir,!0,!0);
+        }
+        if (bool) {
+            if (FS.analyzePath(path).exists) FS.unlink(path);
+            FS.createDataFile(dir, path.split('/').pop(), data, !0, !0);
+        } else if (!FS.analyzePath(path).exists) FS.createDataFile(dir, path.split('/').pop(), data, !0, !0);
+    };
+            FS.createPath('/', '/userdata', !0, !0);
+            let base = "/home/web_user/retroarch";
+            let config = `${base}/userdata/retroarch.cfg`;
+            
+            FS.createPath('/', '/userdata', !0, !0);
+            FS.createPath('/', `${base}/userdata`, !0, !0);
+            FS.createPath('/', `${base}/bundle`, !0, !0);
+            FS.createPath('/', `${base}/userdata/config/mGBA`, !0, !0);
+            if (!FS.analyzePath(`${base}/userdata/config/mGBA/mGBA.opt`).exists) {
+                FS.createDataFile(`${base}/userdata/config/mGBA`, `mGBA.opt`, `mgba_sgb_borders = "OFF"`, !0, !0);
+            }
+                let cfg = 'menu_mouse_enable = "true"\n' +
+                    'menu_pointer_enable = "true"\n' +
+                    `menu_driver = "glui"\n` +
+                    //+'materialui_show_nav_bar = false\n'
+                    `materialui_playlist_icons_enable = "false"\n` +
+                    `materialui_auto_rotate_nav_bar = "false"\n` +
+                    `video_font_size = "12.000000"\n` +
+                    `video_adaptive_vsync = "true"\n` +
+                    //`video_shader_enable = true\n`+
+                    `savestate_auto_load = true\n` +
+                    //`fastforward_ratio = 1.0\n`+
+                    `rewind_enable = "false"\n` +
+                    `menu_widget_scale_auto = "false"\n` +
+                    'materialui_icons_enable = false\n' +
+                    `menu_scale_factor = "2.000000"\n` +
+                    `menu_show_core_updater = "false"\n` +
+                    `menu_show_help = "false"\n` +
+                    `menu_show_information = "false"\n` +
+                    `menu_show_legacy_thumbnail_updater = "false"\n` +
+                    `menu_show_load_core = "false"\n` +
+                    `menu_show_quit_retroarch = "false"\n` +
+                    `menu_show_overlays = "false"\n` +
+                    `menu_show_online_updater = "false"\n` +
+                    `settings_show_accessibility = "false"\n` +
+                    //+`settings_show_user_interface = "false"\n`
+                    `settings_show_user = "false"\n` +
+                    `settings_show_recording = "false"\n` +
+                    `settings_show_power_management = "false"\n` +
+                    `settings_show_playlists = "false"\n` +
+                    `settings_show_network = "false"\n` +
+                    `settings_show_logging = "false"\n` +
+                    `settings_show_file_browser = "false"\n` +
+                    `settings_show_directory = "false"\n` +
+                    `settings_show_core = "false"\n` +
+                    `settings_show_ai_service = "false"\n` +
+                    `settings_show_achievements = "false"\n` +
+                    `settings_show_drivers = "false"\n` +
+                    `settings_show_configuration = "false"\n` +
+                    `settings_show_latency = "false"\n` +
+                    //+`settings_show_frame_throttle = "false"\n`
+                    `settings_show_saving = "false"\n` +
+                    `camera_allow = "false"\n` +
+                    `camera_driver = "null"\n` +
+                    `camera_device = "null"\n` +
+                    `input_max_users = "1"\n` +
+                    //+`bundle_assets_extract_enable = "false"\n`
+                    `quick_menu_show_information = "false"\n` +
+                    `quick_menu_show_recording = "false"\n` +
+                    `quick_menu_show_reset_core_association = "false"\n` +
+                    `quick_menu_show_save_content_dir_overrides = "false"\n` +
+                    `quick_menu_show_save_core_overrides = "false"\n` +
+                    `quick_menu_show_save_game_overrides = "false"\n` +
+                    `quick_menu_show_start_recording = "false"\n` +
+                    `quick_menu_show_start_streaming = "false"\n` +
+                    `quick_menu_show_streaming = "false"\n` +
+                    `quick_menu_show_add_to_favorites = "false"\n` +
+
+                    `content_show_explore = "fasle"\n` +
+                    `content_show_favorites = "fasle"\n` +
+                    `content_show_history = "fasle"\n` +
+                    `content_show_music = "fasle"\n` +
+                    `content_show_playlists = "fasle"\n` +
+                    `content_favorites_path = "null"\n` +
+                    `content_history_path = "null"\n` +
+                    `content_image_history_path = "null"\n` +
+                    `content_music_history_path = "null"\n` +
+
+                    //'video_vsync = true\n'+
+                    //'autosave_interval = "1"\n'+
+                    `playlist_directory = "null"\n` +
+                    `auto_screenshot_filename = "false"\n` +
+                    `savestate_thumbnail_enable = "false"\n` +
+                    `autosave_interval = "1"\n` +
+                    `block_sram_overwrite = "false"\n` +
+                    `savestate_file_compression = "false"\n` +
+                    `save_file_compression = "false"\n`;
+                   FS.createDataFile(`${base}/userdata`, 'retroarch.cfg', cfg, !0, !0);
+                    Module["canvas"] = document.querySelector('#canvas');
+                    let assets = await Module.FectchItem({
+                        'url':'assets/mgba/assets.png?'+Math.random(),
+                        'unpack':true,
+                        //'key':'assets.zip',
+                        //'store':'data-libjs'
+                    });
+                    Object.entries(assets).forEach(val=>{
+                        let path = `${base}/bundle/${val[0]}`;
+                        CreateDataFile(path, val[1]);
+                        if (/chinese\-fallback\-font\.ttf$/.test(val[0])) {
+                            CreateDataFile(`${base}/bundle/assets/glui/font.ttf`, val[1]);
+                            //CreateDataFile(`${base}/bundle/assets/ozone/regular.ttf`, val[1]);
+                            //CreateDataFile(`${base}/bundle/assets/pkg/font.ttf`, val[1]);
+                        }
+                        delete assets[val[0]];
+                    });
+            CreateDataFile("1.gba",new Uint8Array(await (await fetch('assets/mgba/3.gba')).arrayBuffer()));
+                    let sstime = setInterval(()=>{
+                        if(!FS.ignorePermissions){
+                            clearInterval(sstime);
+                            Module.once(document.body,'pointerup',()=>{
+                                Module.callMain(['-v','1.gba']);
+                            
+                                let w = Math.min(window.innerWidth,document.documentElement.clientWidth),
+               h = Math.min(window.innerHeight,document.documentElement.clientHeight),
+               tmph = w/(1.5);
+               Module.setCanvasSize(w,h);
+            });
+                        }
+                    },1000/60)
+                    
+                    //Module.arguments.pop();
+                    //Module.arguments.push('/1.gba');
+
+        Module.reloadAudio = ()=>{
+            Module["pauseMainLoop"]();
+            RA.bufIndex = 0;
+            RA.bufOffset = 0
+            var ac = window["AudioContext"] || window["webkitAudioContext"];
+            if (!ac) return 0;
+            RA.context.close();
+            delete RA.context;
+            RA.context = new ac;
+            RA.numBuffers = Module.latency * RA.context.sampleRate / (1e3 * RA.BUFFER_SIZE) | 0;
+            if (RA.numBuffers < 2) RA.numBuffers = 2;
+            for (var i = 0; i < RA.numBuffers; i++) {
+                RA.buffers[i] = RA.context.createBuffer(2, RA.BUFFER_SIZE, RA.context.sampleRate);
+                RA.buffers[i].endTime = 0
+            }
+            RA.nonblock = false;
+            RA.startTime = 0;
+            RA.context.createGain();
+            window["setTimeout"](RA.setStartTime, 0);
+        };
+        Module.showAudioErr = ()=>{
+            if(Module.showAudioopen)return;
+            alert(RA.context.state);
+            let func = ()=>{
+                Module.un(document.body,'pointerup',func);
+                Module.showAudioopen = false;
+                if(!RA.context || RA.context.state !='suspended'){
+                    Module.reloadAudio();
+                }else{
+                    RA.context.resume();
+                }
+                Module.resumeMainLoop();
+            };
+            Module.showAudioopen = true;
+            Module.on(document.body,'pointerup',func)
+        }
+        Module.on(Module.$('.aa'),'click',()=>{
+                RA.context.resume();
+            Module.showAudioopen = false;
+            Module.resumeMainLoop();
+        });
+        };
+        Module.docload(func);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+.game-container{position:fixed;top:0;left:0;right:0;bottom:0}.game-container>header{display:flex;justify-content:space-between;align-items:stretch;position:relative}.game-container>header>nav{position:absolute;top:100%;left:8%;display:none;flex-direction:column;flex-wrap:nowrap;justify-content:center;align-items:flex-start}.game-container>#canvas{width:100%}
