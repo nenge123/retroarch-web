@@ -13,7 +13,9 @@
             let sys = elm.getAttribute('data-sys'),
                 sys2 = sys.replace(/\-/g, '_'),
                 sysext = elm.getAttribute('data-mode') ? '_' + elm.getAttribute('data-mode') : '',
-                sysurl = this.JSpath + 'cores/' + sys2 + sysext + '.js?' + RAND;
+                sysurl = this.JSpath + 'cores/' + sys2 + sysext + '.png?' + RAND;
+            Module.system = elm.getAttribute('data-sys');
+            Module.system_mode = sys2 + sysext;
             elm.hidden = true;
             let corefile = await this.FectchItem({
                 'url': sysurl,
@@ -94,21 +96,30 @@
             this.runaction('closemenu');
         },
         'setRecord': () => {
-            if (!Module.onRunning||!Module.canvas) return;
+            if (!this.Module.onRunning||!this.Module.canvas) return;
             if (this.Module.Record) return this.Module.Record;
             let Media_Stream = this.Module.canvas.captureStream(30);
             let recorder;
-            ['video/mp4', 'video/webm'].forEach(val => {
-                if (!recorder && MediaRecorder.isTypeSupported(val)) recorder = new MediaRecorder(Media_Stream, {
-                    'mimeType': val
+            if(Media_Stream){
+                ['video/mp4', 'video/webm'].forEach(val => {
+                    if (!recorder && MediaRecorder.isTypeSupported(val)) recorder = new MediaRecorder(Media_Stream, {
+                        'mimeType': val
+                    });
                 });
-            });
+            }
             if (recorder) {
-                recorder.ondataavailable = e => {
-                    this.unitl.download('录像recorder.' + recorder.mimeType.split(';')[0].split('/')[1], new Blob([e.data], {
-                        'type': recorder.mimeType.split(';')[0]
-                    }));
+                recorder.Blobs =[];
+                recorder.ondataavailable = e=>{
+                    recorder.Blobs.push(e.data);
                 };
+                T.on(recorder,'stop',e=>{
+                    if(recorder.Blobs.length>0){
+                        let mime = recorder.mimeType.split(';')[0].replace(/\s/g,'');
+                        console.log(mime);
+                        this.unitl.download('录像recorder.' + mime.split('/')[1], new Blob(recorder.Blobs, {'type': mime}),mime);
+                        recorder.Blobs = [];
+                    }
+                });
                 this.Module.Record = recorder;
                 return recorder;
             }
@@ -148,7 +159,7 @@
                         }
                     },1000/60);
                     if(this.syncTime)clearInterval(this.syncTime);
-                    else this.syncTime = Timer;
+                    this.syncTime = Timer;
                 });
             },
             'syncMountList':[],

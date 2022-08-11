@@ -471,8 +471,12 @@ const Nenge = new class{
             "pdf":["255044462D312E",false]
         };
         URL(u8,type){
-            if(!type || !/\\/.test(type))type = this.gettype(type);
-            return window.URL.createObjectURL(u8 instanceof File ? u8:new Blob([u8],{'type':type}));
+            if(!type){
+                if(u8.type)type=u8.type;
+                else if(!/(\\|\/)/.test(type))type = this.gettype(type);
+            }
+            console.log(type);
+            return window.URL.createObjectURL(u8 instanceof Blob ? u8:new Blob([u8],{'type':type}));
         }
         removeURL(url){
             return window.URL.revokeObjectURL(url);
