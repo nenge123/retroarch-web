@@ -43,7 +43,7 @@
     });
     let gamename = '--menu';
     Object.entries(await this.FectchItem({
-        'url': this.JSpath + 'test.zip',
+        'url': this.JSpath + 'gba-test.png',
         'unpack': true,
         'store': 'data-libjs',
         'key': 'retroarch-test-gba',
