@@ -16,19 +16,21 @@
 <body>
     <div class="g-header">
         <div class="container no-select">
-            <button class="menu" data-click="showmenu">
+            <div class="menu" data-click="showmenu">
                 <span class="menu-icon"></span>
-            </button>
+            </div>
             <div class="menu-list">
                 <div data-click="filemanager">文件管理File</div>
                 <div data-click="fanyi">翻译设置AI</div>
                 <div data-click="setting-retroarch">配置设置Configuration</div>
                 <div data-click="setting-cores">核心设置Core Configuration</div>
                 <div data-click="Record">开始/结束录制start/stop Record</div>
+                <div data-click="reload">刷新返回reflashBack</div>
                 <div data-click="help">帮助Help</div>
             </div>
             <div class="m sys" data-click="showsys"></div>
-            <div class="m add" data-click="showsys"></div>
+            <div class="m add" data-click="addcontent" hidden></div>
+            <div class="m forward" data-click="forward" hidden></div>
         </div>
     </div>
     <div class="g-main">
@@ -55,6 +57,10 @@
         <div class="container game-ui no-select">
             <div class="game">
                 <span class="needclick" hidden>手机需要再次点击启动!</span>
+                <div class="welcome">
+                    <h3>请选择装载内容<span data-click="addbios">载入bios</span></h3>
+                    <div class="start-result" data-click="runcontent" data-loadtext="启动" data-loaddata="载入"></div>
+                </div>
                 <canvas id="canvas"></canvas>
                 <div class="ctrl">
                     <div class="vk" data-key="player1_l" data-k="l">L</div>
