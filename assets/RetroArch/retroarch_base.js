@@ -78,8 +78,6 @@
             }else{
                 Object.entries(await T.unitl.unFile(contents,text=>elm.innerHTML=text)).forEach(
                     entry=>{
-                        console.log(entry);
-                        filelist.push(entry[0]);
                         Module.CreateDataFile(entry[0],entry[1]);
                         this.runaction('addHTMLonWelcome',[entry[0]])
                     }
