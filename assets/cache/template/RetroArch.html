@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-cn-hans">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no,width=device-width">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta name="x-content-type-options" content="nosniff" />
+    <meta name="renderer" content="webkit">
+    <title>RetroArch Web</title>
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1660311462" />
+</head>
+
+<body>
+    <div class="g-header">
+        <div class="container no-select">
+            <div class="menu" data-click="showmenu">
+                <span class="menu-icon"></span>
+            </div>
+            <div class="menu-list">
+                <div data-click="filemanager">文件管理File</div>
+                <div data-click="fanyi">翻译设置AI</div>
+                <div data-click="setting-retroarch">配置设置Configuration</div>
+                <div data-click="setting-cores">核心设置Core Configuration</div>
+                <div data-click="Record">开始/结束录制start/stop Record</div>
+                <div data-click="reload">刷新返回reflashBack</div>
+                <div>
+                    <h3>清晰度</h3>
+                    <ul>
+                        <li data-click="quality">1080p</li>
+                        <li data-click="quality">720p</li>
+                        <li data-click="quality">480p</li>
+                        <li data-click="quality">320p</li>
+                        <li data-click="quality">160p</li>
+                    </ul>
+                </div>
+                <div data-click="help">帮助Help</div>
+            </div>
+            <div class="m sys" data-click="showsys"></div>
+            <div class="m add" data-click="addcontent" hidden></div>
+            <div class="m forward" data-click="forward" hidden></div>
+        </div>
+    </div>
+    <div class="g-main">
+        <div class="container">
+            <div class="start">
+                <div class="cores">
+                    <p data-click="startCores" data-sys="vba-next" data-mode="libretro">启动</p>
+                    <p class="cores-name">GBA vba-next</p>
+                    <p data-click="setCores" data-name="vba-next">核心配置</p>
+                    <div class="cfg">
+                        <textarea></textarea>
+                    </div>
+                </div>
+                <div class="cores">
+                    <p data-click="startCores" data-sys="mgba" data-mode="libretro">启动</p>
+                    <p class="cores-name">GBA mgba</p>
+                    <p data-click="setCores" data-name="mgba">核心配置</p>
+                    <div class="cfg">
+                        <textarea></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container game-ui no-select">
+            <div class="game">
+                <span class="needclick" hidden>手机需要再次点击启动!</span>
+                <div class="welcome">
+                    <h3>请选择装载内容<span data-click="addbios">载入bios</span></h3>
+                    <div class="start-result" data-click="runcontent" data-loadtext="启动" data-loaddata="载入"></div>
+                </div>
+                <canvas id="canvas"></canvas>
+                <div class="ctrl">
+                    <div class="vk" data-key="player1_l" data-k="l">L</div>
+                    <div class="vk" data-key="player1_r" data-k="r">R</div>
+                    <div class="vk" data-key="player1_a" data-k="a">A</div>
+                    <div class="vk" data-key="player1_b" data-k="b">B</div>
+                    <div class="vk" data-key="player1_x" data-k="x"></div>
+                    <div class="vk" data-key="player1_y" data-k="y"></div>
+                    <div class="vk" data-key="player1_select" data-k="select">SELECT</div>
+                    <div class="vk" data-key="player1_start" data-k="start">START</div>
+                    <div class="vk" data-key="player1_left" data-k="left">←</div>
+                    <div class="vk" data-key="player1_right" data-k="right">→</div>
+                    <div class="vk" data-key="player1_up" data-k="up">↑</div>
+                    <div class="vk" data-key="player1_down" data-k="down">↓</div>
+                    <div class="vk" data-key="player1_up,player1_left" data-k="ul"></div>
+                    <div class="vk" data-key="player1_up,player1_right" data-k="ur"></div>
+                    <div class="vk" data-key="player1_down,player1_left" data-k="dl"></div>
+                    <div class="vk" data-key="player1_down,player1_right" data-k="dr"></div>
+                </div>
+            </div>
+            <div class="filemanager">
+
+            </div>
+            <div class="setting-cfg">
+
+            </div>
+            <div class="setting-cores">
+
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?<?php echo time();?>"></script>
+</body>
+
+</html>

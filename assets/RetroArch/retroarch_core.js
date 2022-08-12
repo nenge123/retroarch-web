@@ -327,7 +327,7 @@ const Nenge = new class{
                 await Promise.all(
                     entries.map(
                         async entry=>{
-                            if(!entry.directory)contents[entry.filename] = await this.ZipReadEntry(entry,this.ZipPassword||password);
+                            if(!entry.directory)contents[entry.filename] = await this.ZipReadEntry(entry,this.ZipPassword||password,cb);
                             return true;
                         }
                     )
@@ -341,11 +341,12 @@ const Nenge = new class{
                 return u8;
             }
         }
-        async ZipReadEntry(entry,password){
-            if(!entry.encrypted)return await entry.getData(new zip.Uint8ArrayWriter());
+        async ZipReadEntry(entry,password,cb){
+            let onprogress = (index,max)=>cb(entry.filename+' &gt;&gt; '+Math.ceil(index/max*100)+'%');
+            if(!entry.encrypted)return await entry.getData(new zip.Uint8ArrayWriter(),{onprogress});
             else{
                 try{
-                    return await entry.getData(new zip.Uint8ArrayWriter(),{password});
+                    return await entry.getData(new zip.Uint8ArrayWriter(),{password,onprogress});
                 }catch(e){
                     if(e.message=='File contains encrypted entry'){
                         let newpassword = window.prompt('need a read password');

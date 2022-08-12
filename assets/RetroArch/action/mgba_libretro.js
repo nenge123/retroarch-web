@@ -48,5 +48,6 @@
     this.$('.g-main .start').hidden = true;
     this.$('.g-header .add').hidden = false;
     this.$('.game-ui').classList.add('active');
+    this.$('.game-ui .ctrl').classList.add('gba');
     T.runaction('addDATAonWelcome');
 }).call(Nenge);

@@ -43,9 +43,11 @@
                             entry=>{
                                 filelist.push(entry[0]);
                                 Module.CreateDataFile(entry[0],entry[1]);
-                                this.runaction('addHTMLonWelcome',[entry[0]])
+                                this.runaction('addHTMLonWelcome',[entry[0]]);
+                                zipdata[entry[0]]=null;
                             }
                         );
+                        zipdata = null;
                     }
                 }else{
                     filelist.push(file);
@@ -76,12 +78,20 @@
                 Module.CreateDataFile(info.file[0],contents);
                 this.runaction('addHTMLonWelcome',[info.file[0]]);
             }else{
-                Object.entries(await T.unitl.unFile(contents,text=>elm.innerHTML=text)).forEach(
-                    entry=>{
-                        Module.CreateDataFile(entry[0],entry[1]);
-                        this.runaction('addHTMLonWelcome',[entry[0]])
-                    }
-                );
+                let zipdata = await T.unitl.unFile(contents,text=>elm.innerHTML=text);
+                if(zipdata instanceof Uint8Array){
+                    Module.CreateDataFile(info.file[0],zipdata);
+                    this.runaction('addHTMLonWelcome',[info.file[0]]);
+                }else{
+                    Object.entries(zipdata).forEach(
+                        entry=>{
+                            Module.CreateDataFile(entry[0],entry[1]);
+                            this.runaction('addHTMLonWelcome',[entry[0]]);
+                            zipdata[entry[0]] = null;
+                        }
+                    );
+                    zipdata=null;
+                }
                 elm.remove();
             }
             contents = null;
@@ -201,6 +211,12 @@
                 new Function('Module', coreTxt)(Module);
             }
         },
+        'quality':elm=>{
+            let p = parseInt(elm.innerHTML.replace(/p/i,''));
+            Module.canvasQuality = p;
+            Module.resizeCanvasSize();
+            T.runaction('closemenu');
+        },
         'retroarchjs_replace': txt => txt.replace(
             /_RWebAudioInit\(latency\)\s?\{/,
             '_RWebAudioInit(latency){Module.latency=latency;try{'
@@ -223,6 +239,17 @@
         ).replace(
             /calledMain\s?=\s?true/,
             'calledMain = true;Module.onRunning=true'
+        ).replace(
+            /var rect\s?=\s?__specialEventTargets\.indexOf\(target\)\s?\s?<\s?0\s?\?\s?__getBoundingClientRect\(target\)\s?:\s?\{\n?\s*"left":\s?0,\n?\s*"top":\s?0\n?\s*\};/,
+            `target = target  instanceof Element?target:Module.canvas;
+            var rect = __getBoundingClientRect(target);
+            if(Module.canvasWidth&&rect.width!=Module.canvasWidth){
+                rect = {
+                    left:e.clientX + (rect.left - e.clientX)*Module.canvasWidth/rect.width,
+                    top:e.clientY + (rect.top - e.clientY)*Module.canvasHeight/rect.height
+                };
+            }
+            `
         ) + `
         Module.FS = FS;
         Module.GL = GL;
@@ -682,19 +709,28 @@
         },
         'resizeCanvasSize': wh => {
             if (wh) {
-                let [width, height] = wh;
-                Module.AspectRatio = width / height;
+                [Module.width, Module.height] = wh;
+                Module.AspectRatio = Module.width / Module.height;
             }
             if (Module.AspectRatio) {
-                let opt = this.$('.game-ui').getBoundingClientRect(),
-                    w, h;
-                w = opt.width;
-                h = opt.width / Module.AspectRatio;
-                if (h > opt.height) {
-                    h = opt.height;
-                    w = opt.height * Module.AspectRatio;
+                if(!T.$('.game-ui .ctrl').hidden){
+                    let opt = this.$('.game-ui').getBoundingClientRect(),
+                        w = opt.width,
+                        h = opt.width / Module.AspectRatio;
+                    if (h > opt.height) {
+                        h = opt.height;
+                        w = opt.height * Module.AspectRatio;
+                    }
+                    T.$('.game-ui .ctrl').style.top = (h!=opt.height?h:0)+'px';
                 }
-                if (Module.setCanvasSize) Module.setCanvasSize(w, h);
+                let p = Module.canvasQuality || 720;
+                w = p*Module.AspectRatio;
+                h = p;
+                if (Module.setCanvasSize){
+                    Module.canvasWidth = w;
+                    Module.canvasHeight = h;
+                    Module.setCanvasSize(w,h);
+                }
             }
         },
         'CreateDataFile': (path, data, bool) => {
@@ -891,14 +927,10 @@
             let click = this.getAttribute('data-click');
             click && T.runaction(click, [this, e]);
         }));
-        Module.stopGesture(this.$('.game-ui'));
+        Module.stopGesture(document);
         this.on(window, 'resize', () => Module.resizeCanvasSize());
-        this.on(document, 'touchstart', e => e.touches && e.touches.lenth > 1 && Module.stopEvent(e));
-        this.on(document, 'touchend', e => {
-            let now = new Date().getTime();
-            if (Module.lastTouchTime && now - Module.lastTouchTime <= 300) Module.stopEvent(e);
-            Module.lastTouchTime = now;
-        });
+        this.on(document, 'touchstart', e =>Module.stopEvent(e));
+        this.on(document, 'touchend', e =>Module.stopEvent(e));
         let keydown = function (e) {
                 let key = this.getAttribute('data-key');
                 key && key.split(',').forEach(k => Module.KeyDown(k));
