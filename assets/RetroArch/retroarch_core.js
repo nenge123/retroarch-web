@@ -475,6 +475,7 @@ const Nenge = new class{
                 if(u8 instanceof Blob&&u8.type)type=u8.type;
                 else if(!/(\\|\/)/.test(type))type = this.gettype(type);
             }
+            if(typeof u8 == 'string'&&/^(blob|http|\/\w+)/.test(u8)) return u8;
             return window.URL.createObjectURL(u8 instanceof Blob ? u8:new Blob([u8],{'type':type}));
         }
         removeURL(url){
@@ -582,7 +583,8 @@ const Nenge = new class{
         let re = false,
             script = document.createElement(!iscss ? 'script':'link'),
             func = success=>{
-            if(!/^(blob:)?http:\/\//.test(buf)&&!/(\.js$|\.css$)/.test(buf)){
+
+            if(!/^(blob:)?https?:\/\//.test(buf)&&!/(\.js$|\.css$)/.test(buf)){
                 re = true;
                 buf = this.unitl.URL(buf,!iscss ?'js':'css');
             }
