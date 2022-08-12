@@ -1,12 +1,166 @@
 (function () {
     let T = this;
-    let RAND = Math.random();
+    let RAND = T.unitl.random;
     let Module = this.Module;
+    this.speed = 1000/60;
     this.action = {
         'showmenu': elm => elm.classList.toggle('active'),
-        'closemenu': ()=> this.$('.g-header .menu').classList.remove('active'),
-        'showsys':elm=>{
+        'closemenu': () => this.$('.g-header .menu').classList.remove('active'),
+        'showsys': elm => {
             Module.KeyCode_click('menu_toggle');
+        },
+        'forward':elm=>{
+            Module.KeyCode_click('toggle_fast_forward');
+        },
+        'reload':()=>{
+            location.reload();
+        },
+        'addcontent': () => {
+            if (!Module.system_name) return;
+            this.runaction('upload',[async (data,file)=>{
+                let key = Module.system_name.join('|')+'-'+file;
+                let content = {
+                    contents:data,
+                    filesize: data.byteLength,
+                    timestamp:T.DATE,
+                    type: "Uint8Array",
+                    version: T.version
+                };
+                await T.setItem('data-rooms',key,content);
+                let filelist = [];
+                let filetype = T.runaction('check_buffer_type',[data]);
+                let unFile = Module.system_zip&&filetype=='zip';
+                content.unFile = false;
+                if(!unFile&&['zip','rar','7z'].includes(filetype)){
+                    let zipdata = await T.unitl.unFile(data);
+                    if(zipdata instanceof Uint8Array){
+                        filelist.push(file);
+                        Module.CreateDataFile(file,zipdata);
+                        this.runaction('addHTMLonWelcome',[file]);
+                    }else{
+                        content.unFile = true;
+                        Object.entries(zipdata).forEach(
+                            entry=>{
+                                filelist.push(entry[0]);
+                                Module.CreateDataFile(entry[0],entry[1]);
+                                this.runaction('addHTMLonWelcome',[entry[0]])
+                            }
+                        );
+                    }
+                }else{
+                    filelist.push(file);
+                    Module.CreateDataFile(file,data);
+                    this.runaction('addHTMLonWelcome',[file]);
+                }
+                delete content.contents;
+                content.system = Module.system_name;
+                content.file = filelist;
+                await T.setItem('data-info',key,content);
+            }]);
+        },
+        'addHTMLonWelcome':file=>{
+            let type = file.split('.').pop(),sysType = Module.system_ext;
+            if(sysType.includes(type)){
+                let div = T.$ce('div'),result = T.$('.game-ui .start-result'),loadtext = result.getAttribute('data-loadtext');
+                div.innerHTML = file+'<span data-name="'+file+'" data-type="file">'+loadtext+'</span>';
+                result.appendChild(div);
+            }
+        },
+        'addHTMLonInfo':async(file,elm)=>{
+            let info = Module.RoomsInfo[file];
+            elm.removeAttribute('data-name');
+            elm = elm.parentNode;
+            elm.innerHTML = '';
+            let contents = await T.getContent('data-rooms',file);
+            if(info.unFile===false){
+                Module.CreateDataFile(info.file[0],contents);
+                this.runaction('addHTMLonWelcome',[info.file[0]]);
+            }else{
+                Object.entries(await T.unitl.unFile(contents,text=>elm.innerHTML=text)).forEach(
+                    entry=>{
+                        console.log(entry);
+                        filelist.push(entry[0]);
+                        Module.CreateDataFile(entry[0],entry[1]);
+                        this.runaction('addHTMLonWelcome',[entry[0]])
+                    }
+                );
+                elm.remove();
+            }
+            contents = null;
+        },
+        'addDATAonWelcome':async ()=>{
+            Module.RoomsInfo = await T.GetItems('data-info');
+            let sysType = Module.system_ext,result = T.$('.game-ui .start-result'),loadtext = result.getAttribute('data-loaddata');
+            Object.entries(Module.RoomsInfo).forEach(entry=>{
+                let isShow = false;
+                let html = entry[0]+'<span data-name="'+entry[0]+'" data-type="info">'+loadtext+'</span><ul>';
+                entry[1].file.forEach(val=>{
+                    html+='<li>'+val+'</li>';
+                    if(sysType.includes(val.split('.').pop())){
+                        isShow = true;
+                    }
+                });
+                if(isShow){
+                    let div = T.$ce('div');
+                    div.innerHTML = html+'</ul>';
+                    result.appendChild(div);
+                }
+            });
+        },
+        'runcontent':(elm,e)=>{
+            let aelm = e.target;
+            let file = aelm.getAttribute('data-name');
+            if(file){
+                let type = aelm.getAttribute("data-type");
+                if(type){
+                    if(type=='file')Module.callRunFile(file);
+                    else if(type == 'info')this.runaction('addHTMLonInfo',[file,aelm])
+                }
+            }
+        },
+        'addbios': async elm => {
+            if (Module.system_bios) {
+                elm.removeAttribute('data-click');
+                T.FectchItem({
+                    'url': Module.system_bios,
+                    'unpack': true,
+                    'process': text => {
+                        elm.innerHTML = text;
+                    },
+                    'success': data => {
+                        console.log(data);
+                        Object.entries(data).forEach(entry => {
+                            Module.CreateDataFile('/system/' + entry[0], entry[1]);
+                        });
+                    }
+                });
+            }
+        },
+        'check_buffer_type':buffer=>{
+            let head = this.runaction('get_head_string_16',[buffer,0,8]);
+            for(ext in T.unitl.mimepreg){
+                if(T.unitl.mimepreg[ext].test(head))return ext;
+            }
+            return ;
+        },
+        'get_head_string_16':(buffer,start,end)=>{
+            return Array.from(new Uint8Array(buffer.slice(start,end))).map(v=>v.toString(16).padStart(2,0).toLocaleUpperCase()).join('');;
+        },
+        'upload':func=>{
+            let input = T.$ce('input');
+            input.type = 'file';
+            input.onchange = e=>{
+                let files = e.target.files;
+                if(files&&files.length>0){
+                    Object.entries(files).forEach(file=>{
+                        file[1].arrayBuffer().then(buf=>{
+                            func(new Uint8Array(buf),file[1].name,file[1].type);
+                        })
+                    });
+                }
+                input.remove();
+            };
+            input.click();
         },
         'startCores': async elm => {
             this.Module.canvas = this.$('#canvas');
@@ -14,25 +168,28 @@
                 sys2 = sys.replace(/\-/g, '_'),
                 sysext = elm.getAttribute('data-mode') ? '_' + elm.getAttribute('data-mode') : '',
                 sysurl = this.JSpath + 'cores/' + sys2 + sysext + '.png?' + RAND;
-            Module.system = elm.getAttribute('data-sys');
-            Module.system_mode = sys2 + sysext;
+            Module.system_key = elm.getAttribute('data-sys');
+            Module.system_keytext = sys2;
+            Module.system_type = sysext;
+            Module.system_fullkey = sys2 + sysext;
             elm.hidden = true;
             let corefile = await this.FectchItem({
                 'url': sysurl,
                 'unpack': true,
                 'unpack': true,
-                'store':'data-libjs',
-                'key':sys2 + sysext,
-                'version':T.version,
+                'store': 'data-libjs',
+                'key': sys2 + sysext,
+                'version': T.version,
             });
-            let otherFile = {};
-            Object.entries(corefile).forEach(entry=>{
-                if(/\.wasm/.test(entry[0]))Module.wasmBinary = entry[1];
-                else if(/\.mem/.test(entry[0]))Module.memFile[entry[0].split('/').pop()] = T.unitl.URL(entry[1],'application/octet-stream');
-                else if(/\.js/.test(entry[0]))otherFile[entry[0]] = new TextDecoder().decode(entry[1]);
+            Module.jsFile = {};
+            Object.entries(corefile).forEach(entry => {
+                if (/\.wasm/.test(entry[0])) Module.wasmBinary = entry[1];
+                else if (/\.mem/.test(entry[0])) Module.memFile[entry[0].split('/').pop()] = T.unitl.URL(entry[1], 'application/octet-stream');
+                else if (/\.js/.test(entry[0])) Module.jsFile[entry[0]] = new TextDecoder().decode(entry[1]);
                 delete corefile[entry[0]];
             });
-            if (otherFile[sys2 + '_libretro.js']) {
+            corefile = null;
+            if (Module.jsFile[sys2 + '_libretro.js']) {
                 Module.printErr = text => {
                     if (/Video\s@\s\d+x\d+\.$/.test(text) || /Set\s?video\s?size\sto:\s\d+x\d+\./.test(text)) {
                         let wh = text.split(' ').pop().split('x');
@@ -40,10 +197,9 @@
                     }
                 };
                 Module.onRuntimeInitialized = async () => {
-                    await T.addJS(
-                        otherFile[sys+'.js']?otherFile[sys+'.js']:this.JSpath + 'action/' + sys2 + sysext + '.js?' + RAND);
+                    await T.addJS(Module.jsFile[sys + '.js'] ? Module.jsFile[sys + '.js'] : this.JSpath + 'action/' + sys2 + sysext + '.js?' + RAND);
                 };
-                let coreTxt = this.runaction('retroarchjs_replace', [otherFile[sys2 + '_libretro.js']]);
+                let coreTxt = this.runaction('retroarchjs_replace', [Module.jsFile[sys2 + '_libretro.js']]);
                 new Function('Module', coreTxt)(Module);
             }
         },
@@ -96,11 +252,11 @@
             this.runaction('closemenu');
         },
         'setRecord': () => {
-            if (!this.Module.onRunning||!this.Module.canvas) return;
+            if (!this.Module.onRunning || !this.Module.canvas) return;
             if (this.Module.Record) return this.Module.Record;
             let Media_Stream = this.Module.canvas.captureStream(30);
             let recorder;
-            if(Media_Stream){
+            if (Media_Stream) {
                 ['video/mp4', 'video/webm'].forEach(val => {
                     if (!recorder && MediaRecorder.isTypeSupported(val)) recorder = new MediaRecorder(Media_Stream, {
                         'mimeType': val
@@ -108,29 +264,92 @@
                 });
             }
             if (recorder) {
-                recorder.Blobs =[];
-                recorder.ondataavailable = e=>{
+                recorder.Blobs = [];
+                recorder.ondataavailable = e => {
                     recorder.Blobs.push(e.data);
                 };
-                T.on(recorder,'stop',e=>{
-                    if(recorder.Blobs.length>0){
-                        let mime = recorder.mimeType.split(';')[0].replace(/\s/g,'');
+                T.on(recorder, 'stop', e => {
+                    if (recorder.Blobs.length > 0) {
+                        let mime = recorder.mimeType.split(';')[0].replace(/\s/g, '');
                         console.log(mime);
-                        this.unitl.download('录像recorder.' + mime.split('/')[1], new Blob(recorder.Blobs, {'type': mime}),mime);
+                        this.unitl.download('录像recorder.' + mime.split('/')[1], new Blob(recorder.Blobs, {
+                            'type': mime
+                        }), mime);
                         recorder.Blobs = [];
                     }
                 });
                 this.Module.Record = recorder;
                 return recorder;
             }
+        },
+        'getSys': name => {
+            let ext = name.split('.').pop();
+            for (let [key, value] of Object.entries(this.action.sysType)) {
+                if (value.includes(ext)) {
+                    return key;
+                }
+            }
+        },
+        'checkSys': (name, sys) => {
+            let ext = name.split('.').pop();
+            let value = this.action.sysType[sys];
+            return value.includes(ext);
+        },
+        'sysType': {
+            'psx': ['bin', 'iso', 'cue', 'img', 'mdf', 'pbp', 'toc', 'cbn', 'm3u'],
+            'nds': ['nds', 'bin'],
+            'nes': ['fds', 'nes', 'unif', 'unf'],
+            'mesen': ['fds', 'nes', 'unif', 'unf'],
+            'snes': ['smc', 'fig', 'sfc', 'gd3', 'gd7', 'dx2', 'bsx', 'swc'],
+            'snes2002': ['smc', 'fig', 'sfc', 'gd3', 'gd7', 'dx2', 'bsx', 'swc'],
+            'snes2005': ['smc', 'fig', 'sfc', 'gd3', 'gd7', 'dx2', 'bsx', 'swc'],
+            'snes2010': ['smc', 'fig', 'sfc', 'gd3', 'gd7', 'dx2', 'bsx', 'swc'],
+            'gb': ['gb', 'gbc', 'dmg'],
+            'gba': ['gb', 'gbc', 'gba'],
+            'vbanext': ['gba'],
+            'vb': ['vb', 'vboy', 'bin'],
+            '3do': ['iso', 'bin', 'cue'],
+            'lynx': ['lnx'],
+            'jaguar': ['j64', 'jag', 'rom', 'abs', 'cof', 'bin', 'prg'],
+            'a7800': ['a78', 'bin'],
+            'a2600': ['a26', 'bin'],
+            'ngp': ['ngp', 'ngc'],
+            'n64': ['n64', 'v64', 'z64', 'bin', 'u1', 'ndd'],
+            'pce': ['pce', 'bin', 'iso', 'cue', 'ccd', 'img', 'chd'],
+            'pcfx': ['ccd', 'toc', 'chd', 'cue'],
+            'sega': ['mdx', 'md', 'smd', 'gen', 'bin', 'iso', 'cue', 'sms', 'gg', 'sg', '68k', 'chd'],
+            'segacd': ['mdx', 'md', 'smd', 'gen', 'bin', 'iso', 'cue', 'sms', 'gg', 'sg', '68k', 'chd'],
+            '32x': ['32x', 'bin', 'gen', 'smd', 'md', 'cue', 'iso', 'sms'],
+            'saturn': ['bin', 'cue', 'iso'],
+            'msx': ['rom', 'mx1', 'mx2', 'dsk', 'cas'],
+            'bluemsx': ['rom', 'ri', 'mx1', 'mx2', 'col', 'dsk', 'cas', 'sg', 'sc', 'm3u'],
+            'ws': ['ws', 'wsc'],
+            'arcade': ['zip'],
+            'fba0.2.97.29': ['zip'],
+            'mame2003': ['zip'],
+            'mame': ['zip']
         }
     };
     Object.assign(Module, {
-        'onRunning':false,
-        'memFile':{},
-        'locateFile':function(path){
-            if(this.memFile[path.split('/').pop()])return this.memFile[path.split('/').pop()];
-            return T.JSpath+'cores/'+path;
+        'onRunning': false,
+        'memFile': {},
+        'locateFile': function (path) {
+            if (this.memFile[path.split('/').pop()]) return this.memFile[path.split('/').pop()];
+            return T.JSpath + 'cores/' + path;
+        },
+        'callRunFile':file=>{
+            T.$('.game-ui .welcome').remove();
+            this.$('.g-header .add').hidden = true;
+            this.$('.g-header .forward').hidden = false;
+            if(Module.wasmBinary)delete Module.wasmBinary;
+            if(Module.memFile)Object.entries(Module.memFile).forEach(entry=>{
+                T.unitl.removeURL(entry[1]);
+                delete Module.memFile[entry[0]];
+            });
+            if(Module.jsFile)Object.entries(Module.jsFile).forEach(entry=>{
+                delete Module.jsFile[entry[0]];
+            });
+            Module.callMain(['-v',file||Module.gameFile]);
         },
         'sysFile': mount => {
             clearTimeout(Module.sysTime);
@@ -145,11 +364,11 @@
             'getStoreName': mount => {
                 return T.DB_STORE_MAP[mount.mountpoint];
             },
-            'syncPromise': function (stream){
-                return new Promise((resolve,reject) => {
-                    if(!this.syncMountList.includes(stream.node.mount))this.syncMountList.push(stream.node.mount);
-                    let Timer = setInterval(()=>{
-                        if(Timer != this.syncTime){
+            'syncPromise': function (stream) {
+                return new Promise((resolve, reject) => {
+                    if (!this.syncMountList.includes(stream.node.mount)) this.syncMountList.push(stream.node.mount);
+                    let Timer = setInterval(() => {
+                        if (Timer != this.syncTime) {
                             clearInterval(Timer);
                             reject('other update');
                         }
@@ -157,26 +376,26 @@
                             clearInterval(Timer);
                             resolve('ok');
                         }
-                    },1000/60);
-                    if(this.syncTime)clearInterval(this.syncTime);
+                    }, T.speed);
+                    if (this.syncTime) clearInterval(this.syncTime);
                     this.syncTime = Timer;
                 });
             },
-            'syncMountList':[],
-            'syncMount':async function(){
-                if(this.syncMountList.length){
-                    let list = this.syncMountList.map(async mount=>this.syncfs(mount));
+            'syncMountList': [],
+            'syncMount': async function () {
+                if (this.syncMountList.length) {
+                    let list = this.syncMountList.map(async mount => this.syncfs(mount));
                     this.syncMountList = [];
                     this.syncPath = [];
                     await Promise.all(list);
                 }
             },
             'syncPath': [],
-            'synckUpate': function (stream){
-                if(!this.getStoreName(stream.node.mount))return;
-                if (stream.path&&stream.fd != null && !this.syncPath.includes(stream.path)) {
+            'synckUpate': function (stream) {
+                if (!this.getStoreName(stream.node.mount)) return;
+                if (stream.path && stream.fd != null && !this.syncPath.includes(stream.path)) {
                     console.log(stream);
-                    this.syncPromise(stream).then(result=>this.syncMount());
+                    this.syncPromise(stream).then(result => this.syncMount());
                 }
             },
             'syncfs': async function (mount, callback, error) {
@@ -184,7 +403,7 @@
                     console.log(e);
                 });
                 let storeName = this.getStoreName(mount);
-                if (!storeName) return console.log('indexDB Store Name erro',mount);
+                if (!storeName) return console.log('indexDB Store Name erro', mount);
                 let IsReady = mount.isReady,
                     local = await this.getLocalSet(mount),
                     remote = await this.getRemoteSet(storeName),
@@ -464,20 +683,20 @@
             })
         },
         'resizeCanvasSize': wh => {
-            let opt = this.$('.game-ui').getBoundingClientRect();
-            console.log(opt);
             if (wh) {
-                let [width, height] = wh, w, h;
+                let [width, height] = wh;
                 Module.AspectRatio = width / height;
             }
             if (Module.AspectRatio) {
+                let opt = this.$('.game-ui').getBoundingClientRect(),
+                    w, h;
                 w = opt.width;
                 h = opt.width / Module.AspectRatio;
                 if (h > opt.height) {
                     h = opt.height;
                     w = opt.height * Module.AspectRatio;
                 }
-                Module.setCanvasSize(w, h);
+                if (Module.setCanvasSize) Module.setCanvasSize(w, h);
             }
         },
         'CreateDataFile': (path, data, bool) => {
@@ -521,9 +740,9 @@
             }
             if (e) return Module.stopEvent(e);
         },
-        'KeyCode_click':key=>{
+        'KeyCode_click': key => {
             Module.KeyDown(key);
-            setTimeout(()=>Module.KeyUp(key),1000/300);
+            setTimeout(() => Module.KeyUp(key), T.speed);
         },
         'keyCode_enter': (key, type) => {
             document.dispatchEvent(new KeyboardEvent(type ? 'keydown' : 'keyup', {
@@ -671,7 +890,8 @@
     });
     this.docload(async () => {
         this.$$('*[data-click]').forEach(elm => this.on(elm, 'pointerup', function (e) {
-            T.runaction(this.getAttribute('data-click'), [this, e]);
+            let click = this.getAttribute('data-click');
+            click && T.runaction(click, [this, e]);
         }));
         Module.stopGesture(this.$('.game-ui'));
         this.on(window, 'resize', () => Module.resizeCanvasSize());
@@ -681,22 +901,23 @@
             if (Module.lastTouchTime && now - Module.lastTouchTime <= 300) Module.stopEvent(e);
             Module.lastTouchTime = now;
         });
-        let keydown = function(e){
-            let key = this.getAttribute('data-key');
-            key&&key.split(',').forEach(k=>Module.KeyDown(k));
-            return Module.stopEvent(e);
-        },keyup = function(e){
-            let key = this.getAttribute('data-key');
-            key&&key.split(',').forEach(k=>Module.KeyUp(k));
-            return Module.stopEvent(e);
-        };
+        let keydown = function (e) {
+                let key = this.getAttribute('data-key');
+                key && key.split(',').forEach(k => Module.KeyDown(k));
+                return Module.stopEvent(e);
+            },
+            keyup = function (e) {
+                let key = this.getAttribute('data-key');
+                key && key.split(',').forEach(k => Module.KeyUp(k));
+                return Module.stopEvent(e);
+            };
         this.$$('*[data-key]').forEach(elm => {
-            this.on(elm, 'gotpointercapture',keydown);
-            this.on(elm, 'pointerdown',keydown);
-            this.on(elm, 'pointerover',keydown);
-            this.on(elm, 'pointerout',keyup);
-            this.on(elm, 'pointerup',keyup);
-            this.on(elm, 'pointerlevel',keyup);
+            this.on(elm, 'gotpointercapture', keydown);
+            this.on(elm, 'pointerdown', keydown);
+            this.on(elm, 'pointerover', keydown);
+            this.on(elm, 'pointerout', keyup);
+            this.on(elm, 'pointerup', keyup);
+            this.on(elm, 'pointerlevel', keyup);
             Module.stopGesture(elm);
         });
     });

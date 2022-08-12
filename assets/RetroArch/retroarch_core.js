@@ -27,7 +27,7 @@ const Nenge = new class{
     LibStore = 'data-libjs';
     async getItem(store,name,version) {
         if(!name || name instanceof Function) return await this.GetItems(store,name||cb);
-        let T = this,db = await T.GET_DB(store),transaction = T.transaction('data-libjs',db,!0),
+        let T = this,db = await T.GET_DB(store),transaction = T.transaction(store,db,!0),
         maxsize = T.maxsize,
         part = T.part;
         let result = await this.unitl.getItem(transaction,name);
@@ -460,22 +460,21 @@ const Nenge = new class{
         istext(type){
             return ['js','css','html','txt'].includes(type);
         }
-        mimeHead = {
-            "png":["89504E470D0A1A0A",true],
-            "gif":["47494638",true],
-            "jpg":["FFD8FF",true],
-            "zip":["504B0304",true],
-            "webp":["52494646",true],
-            "7z":["377ABCAF271C",true],
-            "rar":["52617221",true],
-            "pdf":["255044462D312E",false]
+        mimepreg = {
+            "7z":/^377ABCAF271C/,
+            "rar":/^52617221/,
+            "zip":/^504B0304/,
+            "png":/^89504E470D0A1A0A/,
+            "gif":/^47494638/,
+            "jpg":/^FFD8FF/,
+            "webp":/^52494646/,
+            "pdf":/^255044462D312E/,
         };
         URL(u8,type){
             if(!type){
-                if(u8.type)type=u8.type;
+                if(u8 instanceof Blob&&u8.type)type=u8.type;
                 else if(!/(\\|\/)/.test(type))type = this.gettype(type);
             }
-            console.log(type);
             return window.URL.createObjectURL(u8 instanceof Blob ? u8:new Blob([u8],{'type':type}));
         }
         removeURL(url){
@@ -730,7 +729,8 @@ const Nenge = new class{
     runaction(action,data){
         if(this.action[action]){
             if(!data)return this.action[action]();
-            return this.action[action].apply(this,data);
+            if(data instanceof Array)return this.action[action].apply(this,data);
+            return this.action[action].call(this,data);
         }else{
             console.log('lost action:'+action);
         }
