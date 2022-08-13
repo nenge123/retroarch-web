@@ -42,6 +42,40 @@ body {
         display: none !important;
         visibility: hidden !important;
     }
+    .g-btn{
+        font-size: .625rem;
+        height: 24px;
+        display: inline-block;
+        padding: 3px 5px;
+        text-align: center;
+        border-radius: .25rem;
+        background-color: #19e716d4;
+        border: 1px solid #a79c9c;
+        background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
+        &.g-right{
+            position: absolute;
+            right: 0px;
+            padding: 3px 0px;
+            width: 40px;
+            top: 0;
+            bottom: 0;
+            height: 24px;
+            margin: auto;
+        }
+        &.g-blue{
+            background-color: #fdf7f6;
+        }
+        &.g-blue2{
+            color: #fff;
+    background-color: #3718df;
+        }
+        &.g-red{
+            font-weight: bold;
+            color: #fff;
+            background-color: #b7778d;
+            background-image: linear-gradient(0deg, #ef2004a6, #ab3d606b);
+        }
+    }
 }
 
 .container {
@@ -149,12 +183,15 @@ body {
             >div {
                 padding: 3px;
                 margin: 5px 2px;
-                >h3{
+
+                >h3 {
                     margin: 0px 0px 10px;
                 }
-                >ul{
+
+                >ul {
                     margin: 0px 0px 10px;
-                    >li{
+
+                    >li {
                         margin: 0px 0px 10px;
                     }
                 }
@@ -171,24 +208,36 @@ body {
             }
         }
 
-        .m {
+        .g-m {
             cursor: pointer;
             height: 24px;
             width: 24px;
         }
 
-        .sys,
-        .forward {
-            background-image: url(../../images/icon.png);
+        .g-sys,
+        .g-forward,
+        .g-hideother{
             background-size: cover;
             border-radius: 50%;
         }
+        .g-sys{
+            background-image: url(../../images/menu.png);
 
+        }
         .forward {
             background-image: url(../../images/hotkey_forward.png);
         }
+        .g-hideother{
+            background-image: url(../../images/hotkey_show.png);
+        }
+        .g-hideother{
+            background-image: url(../../images/hotkey_show.png);
+        }
+        .g-hideother:not([hidden]) ~ div{
+            display: none;
+        }
 
-        .add {
+        .g-add {
             position: relative;
             width: 32px;
             height: 32px;
@@ -279,7 +328,7 @@ body {
     }
 
     .game-ui {
-        position:absolute;
+        position: absolute;
         top: -1200px;
         left: 0;
         right: 0;
@@ -287,6 +336,7 @@ body {
         opacity: 0;
         transition: top .1s, opacity 0s .3s;
         background-color: #000;
+        z-index: 1;
 
         .game {
             text-align: center;
@@ -325,19 +375,6 @@ body {
                     position: relative;
                     padding-left: 1rem;
                     right: 0px;
-
-                    >span {
-                        position: absolute;
-                        right: 1rem;
-                        top: auto;
-                        bottom: auto;
-                        padding: 3px 5px;
-                        border-radius: .25rem;
-                        background: #19e716d4;
-                        border: 1px solid #a79c9c;
-                        background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
-
-                    }
                 }
 
                 .start-result {
@@ -346,18 +383,31 @@ body {
                     padding: 5px;
 
                     >div {
-                        margin: 0px auto 10px;
+                        margin: 0px auto 15px;
                         text-align: left;
                         position: relative;
+                        padding-right: 60px;
 
                         >span {
-                            position: absolute;
-                            right: 0px;
+                            display: inline-block;
                             padding: 3px 5px;
+                            text-align: center;
                             border-radius: .25rem;
-                            background: #19e716d4;
+                            background-color: #19e716d4;
                             border: 1px solid #a79c9c;
                             background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
+
+                            &.load {
+                                position: absolute;
+                                right: 0px;
+                                padding: 3px 0px;
+                                width: 40px;
+                                top: 0;
+                                bottom: 0;
+                                height: 24px;
+                                margin: auto;
+                                background-color: #fdf7f6;
+                            }
                         }
                     }
                 }
@@ -370,7 +420,7 @@ body {
                 left: 0;
                 right: 0;
                 bottom: auto;
-                margin:0px auto !important;
+                margin: 0px auto !important;
                 z-index: 1;
             }
 
@@ -378,6 +428,7 @@ body {
                 display: none;
                 position: relative;
                 min-width: 350px;
+                z-index: 2;
 
                 .vk {
                     position: absolute;
@@ -385,7 +436,7 @@ body {
                     overflow: hidden;
                     font-size: 2.1875rem;
                     color: #FFF;
-                    z-index: 2;
+                    z-index: 3;
                     vertical-align: middle;
                     border: 1px #fff solid;
                     border-radius: .25rem;
@@ -598,22 +649,24 @@ body {
             }
 
             @media screen and (orientation: portrait) and (max-width:800px) {
-                >#canvas{
+                >#canvas {
                     position: absolute;
                     width: 100% !important;
                     height: auto !important;
                 }
+
                 .ctrl {
                     display: block;
                 }
             }
 
             @media screen and (orientation: landscape) and (max-height:800px) {
-                >#canvas{
+                >#canvas {
                     position: absolute;
                     height: 100% !important;
                     width: auto !important;
                 }
+
                 .ctrl {
                     display: block;
                     position: absolute;
@@ -647,11 +700,70 @@ body {
                 max-width: unset;
             }
         }
+
         @media screen and (orientation: landscape) and (max-height:800px) {
             & {
                 width: 100%;
                 max-width: unset;
             }
+        }
+    }
+
+    .g-file {
+        position: absolute;
+        top: 32px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: unset;
+        max-width: unset;
+        transition: top .1s, opacity 0s .3s;
+        background-color: #fff;
+        z-index: 2;
+
+        >.box {
+            margin: 5px;
+            border-radius: .25rem;
+            border: 1px solid #f7e5e5;
+            padding: 5px;
+            span{
+                margin-right: 5px;
+            }
+            >h3 {
+                font-size: 1rem;
+                margin: 0px 0px 10px;
+                position: relative;
+            }
+            >div{
+                font-size: .625rem;
+                margin: 0px 0px 10px;
+
+            }
+            >ul{
+                padding-left: 25px;
+                margin: 0px 0px 10px;
+                font-size: .625rem;
+                >li{
+                    position: relative;
+                    padding-right: 50px;
+                    border-bottom: 1px dashed #a39595;
+                    padding-bottom: 10px;
+                    margin-bottom: 10px;
+                    word-break: break-all;
+                    white-space: pre-wrap;
+                    >ul{
+                        padding-left: 25px;
+                        margin: 0px 0px 10px;
+                        >li{
+                            
+    word-break: break-all;
+    white-space: pre-wrap;
+
+                        }
+                    }
+                }
+            }
+            
         }
     }
 }

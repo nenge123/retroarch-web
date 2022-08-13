@@ -1,8 +1,9 @@
 (async function () {
     let T=this,Module = T.Module,FS = Module.FS,CreateDataFile = Module.CreateDataFile,RAND = T.unitl.random;
-    Module.system_name = ['gba'];
-    Module.system_ext = T.action.sysType['vbanext'];
-    Module.system_bios = this.JSpath+'bios/gba.png?'+RAND;
+    Module.system_name = ['psx'];
+    Module.system_ext = T.action.sysType['psx'];
+    Module.system_ext.push('ccd');
+    Module.system_bios = this.JSpath+'bios/psx.png?'+RAND;
     FS.createPath('/', '/userdata', !0, !0);
     FS.createPath('/', '/home/web_user/retroarch/userdata', !0, !0);
     FS.mount(Module.SyncFsDB, {}, '/userdata');
@@ -43,5 +44,5 @@
     })).forEach(value => {
         CreateDataFile('/home/web_user/retroarch/bundle/' + value[0], value[1]);
     });
-    this.$('.game-ui .ctrl').classList.add('gba');
+    Module.argumentsInfo = file=>file&&[file,"--verbose"]||["--verbose",'--menu'];
 }).call(Nenge);

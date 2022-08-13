@@ -102,7 +102,7 @@ const Nenge = new class{
                 callback(result),cb&&cb(result)};
         });
     }
-    async removeItem(store, name, data,cb) {
+    async removeItem(store, name) {
         let T=this,db = await T.GET_DB(store);
         return new Promise((resolve,reject)=>{
             T.transaction(store,db).delete(name).onsuccess = e=>resolve(`delete:${name}`);
@@ -321,7 +321,9 @@ const Nenge = new class{
             await this.ZipInitJS();
             this.ZipPassword = null;
             let zipReader = new zip.ZipReader(new zip.Uint8ArrayReader(u8));
-            let entries = await zipReader.getEntries();
+            let entries = await zipReader.getEntries({
+                filenameEncoding:'GBK',
+            });
             if(entries.length>0){
                 let contents = {};
                 await Promise.all(
@@ -511,7 +513,7 @@ const Nenge = new class{
         let contents = await this.getContent('data-libjs','libdata-'+file,this.version);
         if(!contents) {
             let zip = 'zip.min.js';
-            this.Libjs[zip] = this.JSpath+zip;
+            this.Libjs[zip] = this.JSpath+zip+'?'+this.unitl.random;
             if(file!=zip){
                 contents = await this.FectchItem({
                     url:this.LibPack,

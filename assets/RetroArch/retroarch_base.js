@@ -2,127 +2,149 @@
     let T = this;
     let RAND = T.unitl.random;
     let Module = this.Module;
-    this.speed = 1000/60;
+    this.speed = 1000 / 60;
     this.action = {
         'showmenu': elm => elm.classList.toggle('active'),
         'closemenu': () => this.$('.g-header .menu').classList.remove('active'),
         'showsys': elm => {
             Module.KeyCode_click('menu_toggle');
         },
-        'forward':elm=>{
+        'hideother': elm => {
+            ['g-file'].forEach(val => {
+                let newelm = T.$('.g-main .' + val);
+                if (newelm) newelm.hidden = true;
+            });
+            elm.hidden = true;
+        },
+        'forward': elm => {
             Module.KeyCode_click('toggle_fast_forward');
         },
-        'reload':()=>{
+        'reload': () => {
             location.reload();
+        },
+        'runtest':()=>{
+            Module.callRunFile();
         },
         'addcontent': () => {
             if (!Module.system_name) return;
-            this.runaction('upload',[async (data,file)=>{
-                let key = Module.system_name.join('|')+'-'+file;
+            this.runaction('upload', [async (data, file) => {
+                let key = Module.system_name.join('|') + '-' + file;
                 let content = {
-                    contents:data,
+                    contents: data,
                     filesize: data.byteLength,
-                    timestamp:T.DATE,
+                    timestamp: T.DATE,
                     type: "Uint8Array",
                     version: T.version
                 };
-                await T.setItem('data-rooms',key,content);
+                await T.setItem('data-rooms', key, content);
                 let filelist = [];
-                let filetype = T.runaction('check_buffer_type',[data]);
-                let unFile = Module.system_zip&&filetype=='zip';
+                let filetype = T.runaction('check_buffer_type', [data]);
+                let unFile = Module.system_zip && filetype == 'zip';
                 content.unFile = false;
-                if(!unFile&&['zip','rar','7z'].includes(filetype)){
-                    let zipdata = await T.unitl.unFile(data);
-                    if(zipdata instanceof Uint8Array){
+                if (!unFile && ['zip', 'rar', '7z'].includes(filetype)) {
+                    let div = T.$ce('div');
+                    T.$('.game-ui .start-result').appendChild(div);
+                    let zipdata = await T.unitl.unFile(data,text=>div.innerHTML=file+' -- '+text);
+                    div.remove();
+                    if (zipdata instanceof Uint8Array) {
                         filelist.push(file);
-                        Module.CreateDataFile(file,zipdata);
-                        this.runaction('addHTMLonWelcome',[file]);
-                    }else{
+                        Module.CreateDataFile(file, zipdata);
+                        this.runaction('addHTMLonWelcome', [file]);
+                    } else {
                         content.unFile = true;
                         Object.entries(zipdata).forEach(
-                            entry=>{
+                            entry => {
                                 filelist.push(entry[0]);
-                                Module.CreateDataFile(entry[0],entry[1]);
-                                this.runaction('addHTMLonWelcome',[entry[0]]);
-                                zipdata[entry[0]]=null;
+                                Module.CreateDataFile(entry[0], entry[1]);
+                                this.runaction('addHTMLonWelcome', [entry[0]]);
+                                zipdata[entry[0]] = null;
                             }
                         );
                         zipdata = null;
                     }
-                }else{
+                } else {
                     filelist.push(file);
-                    Module.CreateDataFile(file,data);
-                    this.runaction('addHTMLonWelcome',[file]);
+                    Module.CreateDataFile(file, data);
+                    this.runaction('addHTMLonWelcome', [file]);
                 }
                 delete content.contents;
                 content.system = Module.system_name;
                 content.file = filelist;
-                await T.setItem('data-info',key,content);
+                await T.setItem('data-info', key, content);
             }]);
         },
-        'addHTMLonWelcome':file=>{
-            let type = file.split('.').pop(),sysType = Module.system_ext;
-            if(sysType.includes(type)){
-                let div = T.$ce('div'),result = T.$('.game-ui .start-result'),loadtext = result.getAttribute('data-loadtext');
-                div.innerHTML = file+'<span data-name="'+file+'" data-type="file">'+loadtext+'</span>';
-                result.appendChild(div);
-            }
+        'addHTMLonWelcome': file => {
+            let type = file.split('.').pop(),
+                sysType = Module.system_ext;
+            //if(sysType.includes(type)){
+            let div = T.$ce('div'),
+                result = T.$('.game-ui .start-result'),
+                loadtext = result.getAttribute('data-loadtext');
+            div.innerHTML = file + ' <span data-name="' + file + '" data-type="down">' + result.getAttribute('data-downtext') + '</span><span class="load" data-name="' + file + '" data-type="file">' + loadtext + '</span>';
+            result.appendChild(div);
+            //}
         },
-        'addHTMLonInfo':async(file,elm)=>{
+        'addHTMLonInfo': async (file, elm) => {
             let info = Module.RoomsInfo[file];
             elm.removeAttribute('data-name');
             elm = elm.parentNode;
             elm.innerHTML = '';
-            let contents = await T.getContent('data-rooms',file);
-            if(info.unFile===false){
-                Module.CreateDataFile(info.file[0],contents);
-                this.runaction('addHTMLonWelcome',[info.file[0]]);
-            }else{
-                let zipdata = await T.unitl.unFile(contents,text=>elm.innerHTML=text);
-                if(zipdata instanceof Uint8Array){
-                    Module.CreateDataFile(info.file[0],zipdata);
-                    this.runaction('addHTMLonWelcome',[info.file[0]]);
-                }else{
+            let contents = await T.getContent('data-rooms', file);
+            if (info.unFile === false) {
+                Module.CreateDataFile(info.file[0], contents);
+                this.runaction('addHTMLonWelcome', [info.file[0]]);
+            } else {
+                let zipdata = await T.unitl.unFile(contents, text => elm.innerHTML = text);
+                if (zipdata instanceof Uint8Array) {
+                    Module.CreateDataFile(info.file[0], zipdata);
+                    this.runaction('addHTMLonWelcome', [info.file[0]]);
+                } else {
                     Object.entries(zipdata).forEach(
-                        entry=>{
-                            Module.CreateDataFile(entry[0],entry[1]);
-                            this.runaction('addHTMLonWelcome',[entry[0]]);
+                        entry => {
+                            Module.CreateDataFile(entry[0], entry[1]);
+                            this.runaction('addHTMLonWelcome', [entry[0]]);
                             zipdata[entry[0]] = null;
                         }
                     );
-                    zipdata=null;
+                    zipdata = null;
                 }
                 elm.remove();
             }
             contents = null;
         },
-        'addDATAonWelcome':async ()=>{
+        'addDATAonWelcome': async () => {
             Module.RoomsInfo = await T.GetItems('data-info');
-            let sysType = Module.system_ext,result = T.$('.game-ui .start-result'),loadtext = result.getAttribute('data-loaddata');
-            Object.entries(Module.RoomsInfo).forEach(entry=>{
+            let sysType = Module.system_ext,
+                result = T.$('.game-ui .start-result'),
+                loadtext = result.getAttribute('data-loaddata');
+                let sysname = Module.system_name;
+            Object.entries(Module.RoomsInfo).forEach(entry => {
                 let isShow = false;
-                let html = entry[0]+'<span data-name="'+entry[0]+'" data-type="info">'+loadtext+'</span><ul>';
-                entry[1].file.forEach(val=>{
-                    html+='<li>'+val+'</li>';
-                    if(sysType.includes(val.split('.').pop())){
+                let html = entry[0] + '<span class="load" data-name="' + entry[0] + '" data-type="info">' + loadtext + '</span><ul>';
+                entry[1].file.forEach(val => {
+                    html += '<li>' + val + '</li>';
+                    if (sysType.includes(val.split('.').pop())) {
                         isShow = true;
                     }
                 });
-                if(isShow){
+                let entry_sys = entry[0].split('-')[0].split('|');
+                if(!isShow&&entry_sys)entry_sys.forEach(val=>isShow = sysname.includes(val));
+                if (isShow) {
                     let div = T.$ce('div');
-                    div.innerHTML = html+'</ul>';
+                    div.innerHTML = html + '</ul>';
                     result.appendChild(div);
                 }
             });
         },
-        'runcontent':(elm,e)=>{
+        'runcontent': (elm, e) => {
             let aelm = e.target;
             let file = aelm.getAttribute('data-name');
-            if(file){
+            if (file) {
                 let type = aelm.getAttribute("data-type");
-                if(type){
-                    if(type=='file')Module.callRunFile(file);
-                    else if(type == 'info')this.runaction('addHTMLonInfo',[file,aelm])
+                if (type) {
+                    if (type == 'file') Module.callRunFile(file);
+                    else if (type == 'down') T.unitl.download(file.split('/').pop(), Module.FS.readFile(file));
+                    else if (type == 'info') this.runaction('addHTMLonInfo', [file, aelm])
                 }
             }
         },
@@ -132,11 +154,13 @@
                 T.FectchItem({
                     'url': Module.system_bios,
                     'unpack': true,
+                    'store': 'data-libjs',
+                    'key': 'bios-' + Module.system_bios.split('/').pop().split('.')[0],
                     'process': text => {
                         elm.innerHTML = text;
                     },
                     'success': data => {
-                        console.log(data);
+                        elm.innerHTML = elm.getAttribute('data-sussces');
                         Object.entries(data).forEach(entry => {
                             Module.CreateDataFile('/system/' + entry[0], entry[1]);
                         });
@@ -144,25 +168,25 @@
                 });
             }
         },
-        'check_buffer_type':buffer=>{
-            let head = this.runaction('get_head_string_16',[buffer,0,8]);
-            for(ext in T.unitl.mimepreg){
-                if(T.unitl.mimepreg[ext].test(head))return ext;
+        'check_buffer_type': buffer => {
+            let head = this.runaction('get_head_string_16', [buffer, 0, 8]);
+            for (ext in T.unitl.mimepreg) {
+                if (T.unitl.mimepreg[ext].test(head)) return ext;
             }
-            return ;
+            return;
         },
-        'get_head_string_16':(buffer,start,end)=>{
-            return Array.from(new Uint8Array(buffer.slice(start,end))).map(v=>v.toString(16).padStart(2,0).toLocaleUpperCase()).join('');;
+        'get_head_string_16': (buffer, start, end) => {
+            return Array.from(new Uint8Array(buffer.slice(start, end))).map(v => v.toString(16).padStart(2, 0).toLocaleUpperCase()).join('');;
         },
-        'upload':func=>{
+        'upload': func => {
             let input = T.$ce('input');
             input.type = 'file';
-            input.onchange = e=>{
+            input.onchange = e => {
                 let files = e.target.files;
-                if(files&&files.length>0){
-                    Object.entries(files).forEach(file=>{
-                        file[1].arrayBuffer().then(buf=>{
-                            func(new Uint8Array(buf),file[1].name,file[1].type);
+                if (files && files.length > 0) {
+                    Object.entries(files).forEach(file => {
+                        file[1].arrayBuffer().then(buf => {
+                            func(new Uint8Array(buf), file[1].name, file[1].type);
                         })
                     });
                 }
@@ -186,7 +210,7 @@
                 'unpack': true,
                 'unpack': true,
                 'store': 'data-libjs',
-                'key': sys2 + sysext,
+                'key': 'cores-' + sys2 + sysext,
                 'version': T.version,
             });
             Module.jsFile = {};
@@ -196,23 +220,22 @@
                 else if (/\.js/.test(entry[0])) Module.jsFile[entry[0]] = new TextDecoder().decode(entry[1]);
                 delete corefile[entry[0]];
             });
-            corefile = null;
             if (Module.jsFile[sys2 + '_libretro.js']) {
-                Module.printErr = text => {
-                    if (/Video\s@\s\d+x\d+\.$/.test(text) || /Set\s?video\s?size\sto:\s\d+x\d+\./.test(text)) {
-                        let wh = text.split(' ').pop().split('x');
-                        Module.resizeCanvasSize(wh);
-                    }
-                };
                 Module.onRuntimeInitialized = async () => {
                     await T.addJS(Module.jsFile[sys + '.js'] ? Module.jsFile[sys + '.js'] : this.JSpath + 'action/' + sys2 + sysext + '.js?' + RAND);
+                    this.$('.g-main .g-start').remove();
+                    this.$('.g-header .g-add').hidden = false;
+                    this.$('.game-ui').classList.add('active');
+                    T.runaction('addDATAonWelcome');
+                    delete Module.wasmBinary;
+                    corefile = null;
                 };
                 let coreTxt = this.runaction('retroarchjs_replace', [Module.jsFile[sys2 + '_libretro.js']]);
                 new Function('Module', coreTxt)(Module);
             }
         },
-        'quality':elm=>{
-            let p = parseInt(elm.innerHTML.replace(/p/i,''));
+        'quality': elm => {
+            let p = parseInt(elm.innerHTML.replace(/p/i, ''));
             Module.canvasQuality = p;
             Module.resizeCanvasSize();
             T.runaction('closemenu');
@@ -250,24 +273,36 @@
                 };
             }
             `
-        ) + `
-        Module.FS = FS;
-        Module.GL = GL;
-        Module.SYSCALLS = SYSCALLS;
-        Object.assign(
-            Module.SyncFsDB,
-            PATH,
-            MEMFS,
-            {
-                'mount':function(mount) {
-                    let node = this.createNode(null,mount.mountpoint, 16384 | 511, 0);
-                    if(this.getStoreName(mount)){
-                        this.mountPromise.push(this.syncfs(mount,e=>console.log(e)) );
+        ).replace(
+            /var\s?rect\s?=\s?getBoundingClientRect\(target\);/,
+            `var rect = getBoundingClientRect(target);
+            if(Module.canvasWidth&&rect.width!=Module.canvasWidth){
+                rect = {
+                    left:e.clientX + (rect.left - e.clientX)*Module.canvasWidth/rect.width,
+                    top:e.clientY + (rect.top - e.clientY)*Module.canvasHeight/rect.height
+                };
+            }`
+        ).replace(
+            /if\s?\(Module\["noInitialRun"\]\)/,
+            `Module.FS = FS;
+            Module.GL = GL;
+            Module.SYSCALLS = SYSCALLS;
+            Object.assign(
+                Module.SyncFsDB,
+                PATH,
+                MEMFS,
+                {
+                    'mount':function(mount) {
+                        let node = this.createNode(null,mount.mountpoint, 16384 | 511, 0);
+                        if(this.getStoreName(mount)){
+                            this.mountPromise.push(this.syncfs(mount,e=>console.log(e)) );
+                        }
+                        return node;
                     }
-                    return node;
                 }
-            }
-        );`,
+            );
+            if(Module["noInitialRun"])`
+        ),
         'Record': () => {
             let Record = this.runaction('setRecord');
             if (Record) {
@@ -353,28 +388,120 @@
             'fba0.2.97.29': ['zip'],
             'mame2003': ['zip'],
             'mame': ['zip']
+        },
+        'file-show': elm => {
+            T.runaction('closemenu');
+            this.$('.g-main .g-file').hidden = false;
+            this.$('.g-header .g-hideother').hidden = false;
+        },
+        'file-toggle-result': elm => {
+            let db = elm.getAttribute('data-db');
+            let elm2 = this.$('.g-file .result-' + db);
+            if (elm2) {
+                elm2.hidden = !elm2.hidden;
+            }
+
+        },
+        'file-read-data': async elm => {
+            let db = elm.getAttribute('data-db');
+            let html = '';
+            if(db=='data-info'){
+                let db2='data-rooms';
+                Object.entries(await T.GetItems(db)).forEach(entry => {
+                    let file = entry[0];
+                    html += '<li>';
+                    html += '<span>' + file + '</span>';
+                    html += '<span class="g-btn g-blue" data-name="' + file + '" data-type="down" data-db="'+db2+'">' + elm.getAttribute('data-downtext') + '</span>';
+                    html += '<span class="g-btn g-right g-red" data-name="' + file + '" data-type="del" data-db="'+db2+'">' + elm.getAttribute('data-deltext') + '</span>';
+                    if (entry[1].file) {
+                        html += '<ul>';
+                        entry[1].file.forEach(f => {
+                            html += '<li>' + f + '</li>';
+                        });
+                        html += '</ul>';
+                    }
+                    html += '</li>'
+                });
+            }else{
+                let islibjs = !['userdata','retroarch'].includes(db);
+                if(!Module.FS || islibjs){
+                    let path = elm.getAttribute('data-path');
+                    if(path)this.$('.g-file .tips-' + db).innerHTML = path;
+                    Array.from(await T.getAllKeys(db)||[]).forEach(entry=>{
+                        if(!islibjs&&!entry.split('.')[1])return ;
+                        let file = entry;
+                        if(path)file=file.replace(path,'');
+                        html += '<li>';
+                        html += '<span>' + file + '</span>';
+                       if(!islibjs){
+                        html += '<span class="g-btn g-blue" data-name="' + entry + '" data-type="down" data-db="'+db+'">' + elm.getAttribute('data-downtext') + '</span>';
+                            if(['cfg','opt','cht'].includes(file.split('.').pop())){
+                                html += '<span class="g-btn g-blue" data-name="' + entry + '" data-type="edit" data-db="'+db+'">' + elm.getAttribute('data-edittext') + '</span>';
+
+                            }
+                        }
+                        html += '<span class="g-btn g-right g-red" data-name="' + entry + '" data-type="del" data-db="'+db+'">' + elm.getAttribute('data-deltext') 
+                        html += '</li>';
+
+                    });
+                }
+            }
+            if (!html) html = elm.getAttribute('data-nulltext');
+            this.$('.g-file .result-' + db).innerHTML = html;
+            this.$('.g-file .result-' + db).hidden = false;
+
+        },
+        'file-result-action': async (elm, e) => {
+            let newelm = e.target;
+            let type = newelm.getAttribute('data-type');
+            let db = newelm.getAttribute('data-db');
+            let file = newelm.getAttribute('data-name');
+            if (db) {
+                if (type == 'down') T.unitl.download(file.split('/').pop(), await T.getContent(db, file));
+                else if (type == 'del') {
+                    await T.removeItem(db, file);
+                    if (db == 'data-rooms') await T.removeItem('data-info', file);
+                    newelm.parentNode.remove();
+                }
+            }
+        },
+        'file-clear-data': async elm => {
+            let db = elm.getAttribute('data-db');
+            await T.clearDB(db);
+            if (db == 'data-rooms') await T.clearDB('data-info');
         }
     };
     Object.assign(Module, {
         'onRunning': false,
         'memFile': {},
+        'printErr':text => {
+            //Video @ 879x720
+            if (/Video\s@\s\d+x\d+\.?\s*$/.test(text) || /Set\s?video\s?size\sto:\s\d+x\d+\./.test(text)) {
+                let wh = text.split(' ').pop().split('x');
+                console.log(wh);
+                Module.resizeCanvasSize(wh);
+            }
+            console.log(text);
+        },
         'locateFile': function (path) {
             if (this.memFile[path.split('/').pop()]) return this.memFile[path.split('/').pop()];
             return T.JSpath + 'cores/' + path;
         },
-        'callRunFile':file=>{
-            T.$('.game-ui .welcome').remove();
-            this.$('.g-header .add').hidden = true;
-            this.$('.g-header .forward').hidden = false;
-            if(Module.wasmBinary)delete Module.wasmBinary;
-            if(Module.memFile)Object.entries(Module.memFile).forEach(entry=>{
+        'callRunFile': file => {
+            T.$('.game-ui .welcome')&&T.$('.game-ui .welcome').remove();
+            this.$('.g-header .g-add').hidden = true;
+            this.$('.g-header .g-forward').hidden = false;
+            if (Module.wasmBinary) delete Module.wasmBinary;
+            if (Module.memFile) Object.entries(Module.memFile).forEach(entry => {
                 T.unitl.removeURL(entry[1]);
                 delete Module.memFile[entry[0]];
             });
-            if(Module.jsFile)Object.entries(Module.jsFile).forEach(entry=>{
+            if (Module.jsFile) Object.entries(Module.jsFile).forEach(entry => {
                 delete Module.jsFile[entry[0]];
             });
-            Module.callMain(['-v',file||Module.gameFile]);
+            let info = ['-v', file || Module.gameFile|'--menu'];
+            if(Module.argumentsInfo)info = Module.argumentsInfo(file);
+            Module.callMain(info);
         },
         'sysFile': mount => {
             clearTimeout(Module.sysTime);
@@ -713,7 +840,7 @@
                 Module.AspectRatio = Module.width / Module.height;
             }
             if (Module.AspectRatio) {
-                if(!T.$('.game-ui .ctrl').hidden){
+                if (!T.$('.game-ui .ctrl').hidden) {
                     let opt = this.$('.game-ui').getBoundingClientRect(),
                         w = opt.width,
                         h = opt.width / Module.AspectRatio;
@@ -721,15 +848,13 @@
                         h = opt.height;
                         w = opt.height * Module.AspectRatio;
                     }
-                    T.$('.game-ui .ctrl').style.top = (h!=opt.height?h:0)+'px';
+                    T.$('.game-ui .ctrl').style.top = (h != opt.height ? h : 0) + 'px';
                 }
                 let p = Module.canvasQuality || 720;
-                w = p*Module.AspectRatio;
-                h = p;
-                if (Module.setCanvasSize){
-                    Module.canvasWidth = w;
-                    Module.canvasHeight = h;
-                    Module.setCanvasSize(w,h);
+                if (Module.setCanvasSize) {
+                    Module.canvasWidth = p * Module.AspectRatio;
+                    Module.canvasHeight = p;
+                    Module.setCanvasSize(Module.canvasWidth, p);
                 }
             }
         },
@@ -929,8 +1054,12 @@
         }));
         Module.stopGesture(document);
         this.on(window, 'resize', () => Module.resizeCanvasSize());
-        this.on(document, 'touchstart', e =>Module.stopEvent(e));
-        this.on(document, 'touchend', e =>Module.stopEvent(e));
+        this.on(document, 'touchstart', e => Module.stopEvent(e), {
+            'passive': false
+        });
+        this.on(document, 'touchend', e => Module.stopEvent(e), {
+            'passive': false
+        });
         let keydown = function (e) {
                 let key = this.getAttribute('data-key');
                 key && key.split(',').forEach(k => Module.KeyDown(k));
