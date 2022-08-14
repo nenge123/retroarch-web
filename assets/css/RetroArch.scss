@@ -173,7 +173,7 @@ body {
         .menu-list {
             position: absolute;
             top: 32px;
-            height: 0px;
+            height: 0%;
             z-index: 10;
             background-color: #fff;
             margin: auto;
@@ -201,7 +201,8 @@ body {
 
         .menu.active+.menu-list {
             transition: all .3s ease-in-out;
-            height: calc(100vh - 32px);
+            height: calc(100% - 32px);
+            overflow-y: auto;
 
             >div {
                 cursor: pointer;
@@ -224,11 +225,8 @@ body {
             background-image: url(../../images/menu.png);
 
         }
-        .forward {
+        .g-forward {
             background-image: url(../../images/hotkey_forward.png);
-        }
-        .g-hideother{
-            background-image: url(../../images/hotkey_show.png);
         }
         .g-hideother{
             background-image: url(../../images/hotkey_show.png);
@@ -284,15 +282,15 @@ body {
                 justify-content: flex-start;
                 align-items: center;
                 flex-wrap: wrap;
-                width: 400px;
+                width: 450px;
                 max-width: 80%;
                 margin-bottom: 20px;
+                font-size: .825rem;
 
                 >p {
                     display: inline-block;
-                    padding: 3px 5px;
+                    padding:5px;
                     margin: 0px;
-                    height: 32px;
                     border: 1px solid #a79c9c;
                     background: #19e716d4;
                     background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
@@ -375,6 +373,12 @@ body {
                     position: relative;
                     padding-left: 1rem;
                     right: 0px;
+                    >span{
+                        &.g-right{
+                            width: unset;
+                            padding: 3px 5px;
+                        }
+                    }
                 }
 
                 .start-result {
@@ -387,28 +391,6 @@ body {
                         text-align: left;
                         position: relative;
                         padding-right: 60px;
-
-                        >span {
-                            display: inline-block;
-                            padding: 3px 5px;
-                            text-align: center;
-                            border-radius: .25rem;
-                            background-color: #19e716d4;
-                            border: 1px solid #a79c9c;
-                            background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
-
-                            &.load {
-                                position: absolute;
-                                right: 0px;
-                                padding: 3px 0px;
-                                width: 40px;
-                                top: 0;
-                                bottom: 0;
-                                height: 24px;
-                                margin: auto;
-                                background-color: #fdf7f6;
-                            }
-                        }
                     }
                 }
             }
@@ -664,7 +646,7 @@ body {
                 >#canvas {
                     position: absolute;
                     height: 100% !important;
-                    width: auto !important;
+                    width: 100% !important;
                 }
 
                 .ctrl {

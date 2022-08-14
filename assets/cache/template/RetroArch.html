@@ -10,7 +10,7 @@
     <meta name="x-content-type-options" content="nosniff" />
     <meta name="renderer" content="webkit">
     <title>RetroArch Web</title>
-    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1660394684" />
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1660490509" />
 </head>
 
 <body>
@@ -40,7 +40,7 @@
             </div>
             <div class="g-m g-sys" data-click="showsys"></div>
             <div class="g-m g-hideother" data-click="hideother" hidden></div>
-            <div class="g-m g-add" data-click="addcontent" hidden></div>
+            <div class="g-m g-add" data-click="game-add-ontent" hidden></div>
             <div class="g-m g-forward" data-click="forward" hidden></div>
         </div>
     </div>
@@ -64,9 +64,25 @@
                     </div>
                 </div>
                 <div class="cores">
-                    <p data-click="startCores" data-sys="mednafen_psx_hw" data-mode="libretro">启动OPEN</p>
-                    <p class="cores-name">ps1 mednafen_psx_hw</p>
+                    <p data-click="startCores" data-sys="mednafen_psx_hw" data-mode="BinBashBanana">启动OPEN</p>
+                    <p class="cores-name">ps1 BinBashBanana</p>
                     <p data-click="setCores" data-name="mednafen_psx_hw">核心配置</p>
+                    <div class="cfg">
+                        <textarea></textarea>
+                    </div>
+                </div>
+                <div class="cores">
+                    <p data-click="startCores" data-sys="mupen64plus_next" data-mode="BinBashBanana">启动OPEN</p>
+                    <p class="cores-name">n64 BinBashBanana</p>
+                    <p data-click="setCores" data-name="mupen64plus_next">核心配置</p>
+                    <div class="cfg">
+                        <textarea></textarea>
+                    </div>
+                </div>
+                <div class="cores">
+                    <p data-click="startCores" data-sys="snes9x" data-mode="libretro">启动OPEN</p>
+                    <p class="cores-name">sfc snes9x</p>
+                    <p data-click="setCores" data-name="snes9x">核心配置</p>
                     <div class="cfg">
                         <textarea></textarea>
                     </div>
@@ -80,9 +96,9 @@
                     <h3>
                         <span>请选择装载内容</span>
                         <span class="g-btn" data-click="runtest">test</span>
-                        <span class="g-btn g-right" data-click="addbios" data-sussces="完成!">写入bios</span>
+                        <span class="g-btn g-right g-blue2" data-click="game-write-bios" data-sussces="完成!">写入bios</span>
                     </h3>
-                    <div class="start-result" data-click="runcontent" data-loadtext="启动" data-loaddata="写入"
+                    <div class="start-result" data-click="game-write-content" data-loadtext="启动" data-loaddata="写入"
                         data-downtext="下载"></div>
                 </div>
                 <canvas id="canvas"></canvas>
@@ -112,7 +128,7 @@
                     <span class="g-btn g-blue2" data-click="file-toggle-result"
                         data-db="data-info">数据库:data-info/rooms</span>
                     <span class="g-btn" data-click="file-read-data" data-db="data-info" data-downtext="下载"
-                        data-deltext="删除" data-nulltext="空空如也">读取</span>
+                        data-deltext="删除" data-nulltext="空空如也" data-writetext="写入">读取</span>
                     <span class="g-btn g-right g-red" data-click="file-clear-data" data-db="data-rooms">清空</span>
                 </h3>
                 <ul class="result-data-info" data-click="file-result-action" hidden></ul>
@@ -125,7 +141,7 @@
                         data-deltext="删除" data-nulltext="空空如也">读取</span>
                     <span class="g-btn g-right g-red" data-click="file-clear-data" data-db="data-libjs">清空</span>
                 </h3>
-                <div>cores核心文件,glui是界面资源</div>
+                <div>cores核心文件,glui是界面资源,非必要请勿删除</div>
                 <ul class="result-data-libjs" data-click="file-result-action" hidden></ul>
             </div>
             <div class="box">
