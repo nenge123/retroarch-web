@@ -375,7 +375,6 @@ const Nenge = new class {
         async unZip(u8, cb, password, key) {
             let T = this.T;
             await this.ZipInitJS();
-            console.log(u8);
             let zipReader = new zip.ZipReader(u8 instanceof Blob ? new zip.BlobReader(u8) : new zip.Uint8ArrayReader(u8));
             let entries = await zipReader.getEntries({
                 filenameEncoding: 'GBK',

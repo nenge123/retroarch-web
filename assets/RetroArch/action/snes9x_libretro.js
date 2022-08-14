@@ -2,7 +2,7 @@
     let T=this,Module = T.Module,FS = Module.FS,CreateDataFile = Module.CreateDataFile,RAND = T.unitl.random;
     Module.system_name = ['snes'];
     Module.system_ext = T.action.sysType['snes'];
-    Module.system_bios = this.JSpath+'bios/gba.png?'+RAND;
+    Module.system_bios = this.JSpath+'bios/snes.png?'+RAND;
     FS.createPath('/', '/userdata', !0, !0);
     FS.createPath('/', '/home/web_user/retroarch/userdata', !0, !0);
     FS.mount(Module.SyncFsDB, {}, '/userdata');
