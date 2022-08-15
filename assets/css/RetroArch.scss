@@ -42,7 +42,8 @@ body {
         display: none !important;
         visibility: hidden !important;
     }
-    .g-btn{
+
+    .g-btn {
         font-size: .625rem;
         height: 24px;
         display: inline-block;
@@ -52,7 +53,8 @@ body {
         background-color: #19e716d4;
         border: 1px solid #a79c9c;
         background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
-        &.g-right{
+
+        &.g-right {
             position: absolute;
             right: 0px;
             padding: 3px 0px;
@@ -62,14 +64,17 @@ body {
             height: 24px;
             margin: auto;
         }
-        &.g-blue{
+
+        &.g-blue {
             background-color: #fdf7f6;
         }
-        &.g-blue2{
+
+        &.g-blue2 {
             color: #fff;
-    background-color: #3718df;
+            background-color: #3718df;
         }
-        &.g-red{
+
+        &.g-red {
             font-weight: bold;
             color: #fff;
             background-color: #b7778d;
@@ -102,7 +107,7 @@ body {
         flex-direction: row;
         flex-wrap: nowrap;
 
-        .menu {
+        .g-menu {
             border: 0;
             width: 2rem;
             height: 2rem;
@@ -119,7 +124,7 @@ body {
             border-radius: 4px;
             transition: box-shadow .15s ease-in-out;
 
-            .menu-icon {
+            .g-menu-icon {
                 color: #1e293b;
                 border-color: rgba(0, 0, 0, .1);
                 height: 2px;
@@ -153,7 +158,7 @@ body {
             }
 
             &.active {
-                .menu-icon {
+                .g-menu-icon {
                     transform: rotate(45deg);
                     transition: top .3s, bottom .3s, transform .3s .3s, opacity 0s .3s;
 
@@ -170,46 +175,52 @@ body {
             }
         }
 
-        .menu-list {
+        .g-menu-list {
             position: absolute;
             top: 32px;
+            left: 0;
+            right: 0;
+            bottom: 0;
             height: 0%;
+            opacity: 0;
+            width: 1000px;
+            max-width: 100%;
+            margin:auto;
+            padding: 0px 20px;
             z-index: 10;
             background-color: #fff;
-            margin: auto;
             overflow: hidden;
-            transition: all .3s ease-in-out;
+            transition: all .2s ease-in-out;
+            .g-list {
+                >div {
+                    cursor: pointer;
+                    padding: 3px;
+                    margin: 5px 2px;
 
-            >div {
-                padding: 3px;
-                margin: 5px 2px;
-
-                >h3 {
-                    margin: 0px 0px 10px;
-                }
-
-                >ul {
-                    margin: 0px 0px 10px;
-
-                    >li {
+                    >h3 {
                         margin: 0px 0px 10px;
                     }
+
+                    >ul {
+                        margin: 0px 0px 10px;
+
+                        >li {
+                            margin: 0px 0px 10px;
+                        }
+                    }
                 }
+
             }
 
         }
-
-        .menu.active+.menu-list {
-            transition: all .3s ease-in-out;
+        .g-menu.active+.g-menu-list {
+            transition: all .2s ease-in-out;
             height: calc(100% - 32px);
+            opacity: 1;
             overflow-y: auto;
-
-            >div {
-                cursor: pointer;
-            }
         }
 
-        .g-m {
+        .g-mbtn {
             cursor: pointer;
             height: 24px;
             width: 24px;
@@ -217,21 +228,25 @@ body {
 
         .g-sys,
         .g-forward,
-        .g-hideother{
+        .g-hideother {
             background-size: cover;
             border-radius: 50%;
         }
-        .g-sys{
+
+        .g-sys {
             background-image: url(../../images/menu.png);
 
         }
+
         .g-forward {
             background-image: url(../../images/hotkey_forward.png);
         }
-        .g-hideother{
+
+        .g-hideother {
             background-image: url(../../images/hotkey_show.png);
         }
-        .g-hideother:not([hidden]) ~ div{
+
+        .g-hideother:not([hidden])~div {
             display: none;
         }
 
@@ -267,8 +282,8 @@ body {
 }
 
 .g-main {
-    >.container {
-        .start {
+    .g-start-ui {
+        .g-start-list {
             display: flex;
             justify-content: space-evenly;
             align-content: flex-start;
@@ -277,69 +292,40 @@ body {
             align-items: stretch;
             padding: 20px;
 
-            .cores {
-                display: flex;
-                justify-content: flex-start;
-                align-items: center;
-                flex-wrap: wrap;
-                width: 450px;
-                max-width: 80%;
-                margin-bottom: 20px;
-                font-size: .825rem;
+            .g-cores {
+                min-width: max(400px, calc(50% -1px));
+                padding: 0px 10px;
+                list-style: none;
+                margin: 0px 0px 10px;
 
-                >p {
-                    display: inline-block;
-                    padding:5px;
-                    margin: 0px;
-                    border: 1px solid #a79c9c;
-                    background: #19e716d4;
-                    background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
-                    border-radius: .25rem 0 0 .25rem;
-
-                    &.cores-name {
-                        border-left: none;
-                        border-radius: unset;
-
-                    }
-
-                    &.cores-name+p {
-                        border-left: none;
-                        border-radius: 0 .25rem .25rem 0;
-                    }
+                >h3 {
+                    position: relative;
+                    margin: 0px 0px 10px;
                 }
 
-                >.cfg {
-                    width: 100%;
-                    display: none;
-
-                    >textarea {
-                        width: 100%;
-                        height: 400px;
-                    }
-
-                    &.active {
-                        display: block;
-                    }
+                >.g-card-body {
+                    font-size: .625rem;
                 }
             }
         }
+
     }
 
     .game-ui {
         position: absolute;
-        top: -1200px;
+        top: 32px;
         left: 0;
         right: 0;
-        bottom: unset;
-        opacity: 0;
+        bottom: 0;
+        opacity: 1;
         transition: top .1s, opacity 0s .3s;
         background-color: #000;
         z-index: 1;
 
-        .game {
+        .game-container {
             text-align: center;
 
-            >.needclick {
+            >.g-mobile-click {
                 position: absolute;
                 width: 180px;
                 height: 24px;
@@ -355,7 +341,7 @@ body {
                 background-image: linear-gradient(0deg, #2637d9a6, #00f1d06b);
             }
 
-            >.welcome {
+            >.g-welcome {
                 position: absolute;
                 top: 1rem;
                 left: 1rem;
@@ -366,6 +352,11 @@ body {
                 margin: auto;
                 z-index: 9;
 
+                .g-right {
+                    width: unset;
+                    padding: 3px 5px;
+                }
+
                 >h3 {
                     padding: 5px;
                     margin: 0px auto 20px;
@@ -373,15 +364,9 @@ body {
                     position: relative;
                     padding-left: 1rem;
                     right: 0px;
-                    >span{
-                        &.g-right{
-                            width: unset;
-                            padding: 3px 5px;
-                        }
-                    }
                 }
 
-                .start-result {
+                .g-welcome-result {
                     font-size: .625rem;
                     text-align: left;
                     padding: 5px;
@@ -406,7 +391,7 @@ body {
                 z-index: 1;
             }
 
-            .ctrl {
+            .g-ctrl {
                 display: none;
                 position: relative;
                 min-width: 350px;
@@ -637,7 +622,7 @@ body {
                     height: auto !important;
                 }
 
-                .ctrl {
+                .g-ctrl {
                     display: block;
                 }
             }
@@ -649,7 +634,7 @@ body {
                     width: 100% !important;
                 }
 
-                .ctrl {
+                .g-ctrl {
                     display: block;
                     position: absolute;
                     left: 0;
@@ -668,12 +653,6 @@ body {
                     }
                 }
             }
-        }
-
-        &.active {
-            top: 32px;
-            bottom: 0;
-            opacity: 1;
         }
 
         @media screen and (orientation: portrait) and (max-width:800px) {
@@ -697,35 +676,39 @@ body {
         left: 0;
         right: 0;
         bottom: 0;
-        width: unset;
-        max-width: unset;
+        max-width: 100%;
         transition: top .1s, opacity 0s .3s;
         background-color: #fff;
         z-index: 2;
 
-        >.box {
+        >.g-box {
             margin: 5px;
             border-radius: .25rem;
             border: 1px solid #f7e5e5;
             padding: 5px;
-            span{
+
+            span {
                 margin-right: 5px;
             }
+
             >h3 {
                 font-size: 1rem;
                 margin: 0px 0px 10px;
                 position: relative;
             }
-            >div{
+
+            >div {
                 font-size: .625rem;
                 margin: 0px 0px 10px;
 
             }
-            >ul{
+
+            >ul {
                 padding-left: 25px;
                 margin: 0px 0px 10px;
                 font-size: .625rem;
-                >li{
+
+                >li {
                     position: relative;
                     padding-right: 50px;
                     border-bottom: 1px dashed #a39595;
@@ -733,19 +716,21 @@ body {
                     margin-bottom: 10px;
                     word-break: break-all;
                     white-space: pre-wrap;
-                    >ul{
+
+                    >ul {
                         padding-left: 25px;
                         margin: 0px 0px 10px;
-                        >li{
-                            
-    word-break: break-all;
-    white-space: pre-wrap;
+
+                        >li {
+
+                            word-break: break-all;
+                            white-space: pre-wrap;
 
                         }
                     }
                 }
             }
-            
+
         }
     }
 }

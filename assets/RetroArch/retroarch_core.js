@@ -466,7 +466,6 @@ const Nenge = new class {
                 else if (u8Mime == 'rar') action = 'unRAR';
                 else if (u8Mime == '7z') action = 'un7z';
             }
-            console.log('开始解压');
             if (action && this[action]) return await this[action](u8, cb, password, key);
             return u8;
         }

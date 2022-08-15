@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-cn-hans">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,117 +15,152 @@
 <body>
     <div class="g-header">
         <div class="container no-select">
-            <div class="menu" data-click="showmenu">
-                <span class="menu-icon"></span>
+            <div class="g-menu" data-click="showmenu">
+                <span class="g-menu-icon"></span>
             </div>
-            <div class="menu-list">
-                <div data-click="file-show">文件管理File</div>
-                <div data-click="fanyi">翻译设置AI</div>
-                <div data-click="setting-retroarch">配置设置Configuration</div>
-                <div data-click="setting-cores">核心设置Core Configuration</div>
-                <div data-click="Record">开始/结束录制start/stop Record</div>
-                <div data-click="reload">刷新返回reflashBack</div>
-                <div>
-                    <h3>清晰度</h3>
-                    <ul>
-                        <li data-click="quality">1080p</li>
-                        <li data-click="quality">720p</li>
-                        <li data-click="quality">480p</li>
-                        <li data-click="quality">320p</li>
-                        <li data-click="quality">160p</li>
-                    </ul>
+            <div class="g-menu-list">
+                <div class="g-list" data-click="setting-callback">
+                    <div data-setting="showfile">文件管理File</div>
+                    <div data-setting="fanyi">翻译设置AI</div>
+                    <div data-setting="retroarch">配置设置Configuration</div>
+                    <div data-setting="cores">核心设置Core Configuration</div>
+                    <div data-setting='record-action'>开始/结束录制start/stop Record</div>
+                    <div data-setting="reload">刷新返回reflashBack</div>
+                    <div>
+                        <h3>清晰度</h3>
+                        <ul>
+                            <li data-setting="quality" data-p="1080">1080p</li>
+                            <li data-setting="quality" data-p="720">720p</li>
+                            <li data-setting="quality" data-p="480">480p</li>
+                            <li data-setting="quality" data-p="320">320p</li>
+                            <li data-setting="quality" data-p="160">160p</li>
+                        </ul>
+                    </div>
+                    <div data-setting="help">帮助Help</div>
                 </div>
-                <div data-click="help">帮助Help</div>
             </div>
-            <div class="g-m g-sys" data-click="showsys"></div>
-            <div class="g-m g-hideother" data-click="hideother" hidden></div>
-            <div class="g-m g-add" data-click="game-add-ontent" hidden></div>
-            <div class="g-m g-forward" data-click="forward" hidden></div>
+            <div class="g-mbtn g-sys" data-click="showsys"></div>
+            <div class="g-mbtn g-hideother" data-click="hideother" hidden></div>
+            <div class="g-mbtn g-add" data-click="game-content-add" hidden></div>
+            <div class="g-mbtn g-forward" data-click="forward" hidden></div>
         </div>
     </div>
     <div class="g-main">
-        <div class="container g-start">
-            <div class="start">
-                <div class="cores">
-                    <p data-click="startCores" data-sys="vba-next" data-mode="libretro">启动OPEN</p>
-                    <p class="cores-name">GBA vba-next</p>
-                    <p data-click="setCores" data-name="vba-next">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+        <div class="container g-start-ui">
+            <ul class="g-start-list" data-click="game-cores-start">
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>Vba-next</span>
+                        <span class="g-btn" data-sys="vba-next" data-mode="libretro">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:<a href="https://github/libretro/Retroarch" target="_blank">github/libretro/Retroarch</a></li>
+                            <li>support:gba</li>
+                        </ul>
                     </div>
-                </div>
-                <div class="cores">
-                    <p data-click="startCores" data-sys="mgba" data-mode="libretro">启动OPEN</p>
-                    <p class="cores-name">GBA mgba</p>
-                    <p data-click="setCores" data-name="mgba">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>mgba</span>
+                        <span class="g-btn" data-sys="mgba" data-mode="libretro">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/libretro/Retroarch</li>
+                            <li>support:gb/gbc/gba</li>
+                        </ul>
                     </div>
-                </div>
-                <div class="cores">
-                    <p data-click="startCores" data-sys="mednafen_psx_hw" data-mode="BinBashBanana">启动OPEN</p>
-                    <p class="cores-name">ps1 BinBashBanana</p>
-                    <p data-click="setCores" data-name="mednafen_psx_hw">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>mednafen_psx_hw</span>
+                        <span class="g-btn" data-sys="mednafen_psx_hw" data-mode="BinBashBanana">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/BinBashBanana/webretro</li>
+                            <li>support:PlayStation</li>
+                        </ul>
                     </div>
-                </div>
-                <div class="cores">
-                    <p data-click="startCores" data-sys="mupen64plus_next" data-mode="BinBashBanana">启动OPEN</p>
-                    <p class="cores-name">n64 BinBashBanana</p>
-                    <p data-click="setCores" data-name="mupen64plus_next">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>mupen64plus_next</span>
+                        <span class="g-btn" data-sys="mupen64plus_next" data-mode="BinBashBanana">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/BinBashBanana/webretro</li>
+                            <li>support:n64</li>
+                        </ul>
                     </div>
-                </div>
-                <div class="cores">
-                    <p data-click="startCores" data-sys="snes9x" data-mode="libretro">启动OPEN</p>
-                    <p class="cores-name">sfc snes9x</p>
-                    <p data-click="setCores" data-name="snes9x">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>snes9x</span>
+                        <span class="g-btn" data-sys="snes9x" data-mode="libretro">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/libretro/Retroarch</li>
+                            <li>support:sfc/snes</li>
+                        </ul>
                     </div>
-                </div>
-                <div class="cores">
-                    <p data-click="startCores" data-sys="gambatte" data-mode="libretro">启动OPEN</p>
-                    <p class="cores-name">gb/gbc gambatte</p>
-                    <p data-click="setCores" data-name="gambatte">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>gambatte</span>
+                        <span class="g-btn" data-sys="gambatte" data-mode="libretro">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/libretro/Retroarch</li>
+                            <li>support:gb/gbc</li>
+                        </ul>
                     </div>
-                </div>
-                <div class="cores">
-                    <p data-click="startCores" data-sys="genesis_plus_gx" data-mode="libretro">启动OPEN</p>
-                    <p class="cores-name">sega genesis_plus_gx</p>
-                    <p data-click="setCores" data-name="genesis_plus_gx">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>genesis_plus_gx</span>
+                        <span class="g-btn" data-sys="genesis_plus_gx" data-mode="libretro">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/libretro/Retroarch</li>
+                            <li>support:sega ss/gg/mm</li>
+                        </ul>
                     </div>
-                </div>
-                <div class="cores">
-                    <p data-click="startCores" data-sys="nestopia" data-mode="libretro">启动OPEN</p>
-                    <p class="cores-name">nes nestopia</p>
-                    <p data-click="setCores" data-name="nestopia">核心配置</p>
-                    <div class="cfg">
-                        <textarea></textarea>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>nestopia</span>
+                        <span class="g-btn" data-sys="nestopia" data-mode="libretro">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/libretro/Retroarch</li>
+                            <li>support:nes</li>
+                        </ul>
                     </div>
-                </div>
-            </div>
+                </li>
+            </ul>
         </div>
-        <div class="container game-ui no-select">
-            <div class="game">
-                <span class="needclick" hidden>手机需要再次点击启动!</span>
-                <div class="welcome">
+        <div class="container game-ui no-select" hidden>
+            <div class="game-container">
+                <span class="g-mobile-click" hidden>手机需要再次点击启动!</span>
+                <div class="g-welcome">
                     <h3>
                         <span>请选择装载内容</span>
                         <span class="g-btn" data-click="runtest">test</span>
-                        <span class="g-btn g-right g-blue2" data-click="game-write-bios" data-sussces="完成!">写入bios</span>
+                        <span class="g-btn g-right g-blue2" data-click="game-content-bios" data-sussces="完成!"
+                            data-error="失败!">写入bios</span>
                     </h3>
-                    <div class="start-result" data-click="game-write-content" data-loadtext="启动" data-loaddata="写入"
+                    <div class="g-welcome-result" data-click="game-content-write" data-loadtext="启动" data-loaddata="写入"
                         data-downtext="下载"></div>
                 </div>
                 <canvas id="canvas"></canvas>
-                <div class="ctrl">
+                <div class="g-ctrl">
                     <div class="vk" data-key="player1_l" data-k="l">L</div>
                     <div class="vk" data-key="player1_r" data-k="r">R</div>
                     <div class="vk" data-key="player1_a" data-k="a">A</div>
@@ -147,7 +181,7 @@
             </div>
         </div>
         <div class="container g-file" hidden>
-            <div class="box">
+            <div class="g-box">
                 <h3>
                     <span class="g-btn g-blue2" data-click="file-toggle-result"
                         data-db="data-info">数据库:data-info/rooms</span>
@@ -157,7 +191,7 @@
                 </h3>
                 <ul class="result-data-info" data-click="file-result-action" hidden></ul>
             </div>
-            <div class="box">
+            <div class="g-box">
                 <h3>
                     <span class="g-btn g-blue2" data-click="file-toggle-result"
                         data-db="data-libjs">数据库:data-libjs缓存区</span>
@@ -168,7 +202,7 @@
                 <div>cores核心文件,glui是界面资源,非必要请勿删除</div>
                 <ul class="result-data-libjs" data-click="file-result-action" hidden></ul>
             </div>
-            <div class="box">
+            <div class="g-box">
                 <h3>
                     <span class="g-btn g-blue2" data-click="file-toggle-result"
                         data-db="retroarch">数据库:retroarch配置</span>
@@ -180,7 +214,7 @@
                 <div class="tips-retroarch"></div>
                 <ul class="result-retroarch" data-click="file-result-action" hidden></ul>
             </div>
-            <div class="box">
+            <div class="g-box">
                 <h3>
                     <span class="g-btn g-blue2" data-click="file-toggle-result"
                         data-db="userdata">数据库:userdata用户存档</span>
