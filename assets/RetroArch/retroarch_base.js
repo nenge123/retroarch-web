@@ -339,9 +339,10 @@
                     let file = entry[0];
                     html += '<li>';
                     html += '<span>' + file + '</span>';
-                    html += '<span class="g-btn g-blue" data-name="' + file + '" data-type="down" data-db="' + db2 + '">' + elm.getAttribute('data-downtext') + '</span>';
+                    html += '<span class="g-btn g-red" data-name="' + file + '" data-type="del" data-db="' + db2 + '">' + elm.getAttribute('data-deltext') + '</span>';
+                    
                     if(Module.onRunning)html += '<span class="g-btn g-right g-blue2" data-name="' + file + '" data-type="write" data-db="' + db2 + '">' + elm.getAttribute('data-writetext') + '</span>';
-                    else html += '<span class="g-btn g-right g-red" data-name="' + file + '" data-type="del" data-db="' + db2 + '">' + elm.getAttribute('data-deltext') + '</span>';
+                    else html += '<span class="g-btn g-right g-blue" data-name="' + file + '" data-type="down" data-db="' + db2 + '">' + elm.getAttribute('data-downtext') + '</span>';
                     if (entry[1].file) {
                         html += '<ul>';
                         entry[1].file.forEach(f => {
@@ -362,14 +363,14 @@
                         if (path) file = file.replace(path, '');
                         html += '<li>';
                         html += '<span>' + file + '</span>';
+                        html += '<span class="g-btn g-red" data-name="' + entry + '" data-type="del" data-db="' + db + '">' + elm.getAttribute('data-deltext')+'</span>';
                         if (!islibjs) {
-                            html += '<span class="g-btn g-blue" data-name="' + entry + '" data-type="down" data-db="' + db + '">' + elm.getAttribute('data-downtext') + '</span>';
                             if (['cfg', 'opt', 'cht'].includes(file.split('.').pop())) {
                                 html += '<span class="g-btn g-blue" data-name="' + entry + '" data-type="edit" data-db="' + db + '">' + elm.getAttribute('data-edittext') + '</span>';
 
                             }
+                            html += '<span class="g-btn g-right g-blue" data-name="' + entry + '" data-type="down" data-db="' + db + '">' + elm.getAttribute('data-downtext') + '</span>';
                         }
-                        html += '<span class="g-btn g-right g-red" data-name="' + entry + '" data-type="del" data-db="' + db + '">' + elm.getAttribute('data-deltext')
                         html += '</li>';
 
                     });
@@ -531,12 +532,22 @@
         'retroarchjs_replace': txt => txt.replace(
             /_RWebAudioInit\(latency\)\s?\{/,
             '_RWebAudioInit(latency){Module.latency=latency;try{'
+        )
+        .replace(
+            /Module\["pauseMainLoop"\]\(\);\n?\s*return\s?1\n?\s*\}/,
+            'Module["pauseMainLoop"]();return 1;}catch(e){Module.RA_RERUN(RA);return 1;}}'
         ).replace(
-            /RA.nonblock\s?=\s?false;/,
-            'RA.nonblock = false;}catch(e){Module.needAudio(()=>_RWebAudioInit(latency));Module["pauseMainLoop"]();return 1;}'
+            /function\s?_RWebAudioStart\(\)\s?\{/,
+            'function _RWebAudioStart() {if(RA.context.state!="running"){Module.RA_RERUN(RA);}'
         ).replace(
-            /_RWebAudioWrite\(buf,\s?size\)\s?\{/,
-            '_RWebAudioWrite(buf,size){if(RA.context.state!="running"){Module.pauseMainLoop();Module.resetAudio(RA);return;}'
+            /_RWebAudioWrite\(\)\s?\{/,
+            '_RWebAudioWrite(buf,size){if(RA.context.state!="running")return Module.RA_RERUN(RA);'
+        ).replace(
+            /_RWebAudioWriteAvail\(\)\s?\{/,
+            `_RWebAudioWriteAvail (){return 0;`
+        ).replace(
+            /function\s?_RWebCamInit\(caps1,\s?caps2,\s?width,\s?height\)\s?\{/,
+            `function _RWebCamInit( caps1, caps2, width, height) {alert(44);return 0;`
         ).replace(
             /\"mouse(up|down|move|enter|leave)\"/g,
             '"pointer$1"'
@@ -549,14 +560,11 @@
             'if (node.usedBytes === 0 && position === 0) {if(this.SyncFsDB)this.SyncFsDB.synckUpate(stream);node.contents = buffer.slice(offset, offset + length);'
         ).replace(
             /msync:\s?MEMFS\.stream_ops\.msync/,
-            `msync:MEMFS.stream_ops.msync,
+            `'msync':MEMFS.stream_ops.msync,
             'SyncFsDB':Module.SyncFsDB,`
         ).replace(
             /calledMain\s?=\s?true/,
-            'calledMain = true;Module.onRunning=true'
-            //).replace(
-            //    /fillMouseEventData\(JSEvents\.mouseEvent,\s?e,\s?target\);/,
-            //    'fillMouseEventData(JSEvents.mouseEvent, e, target);console.log(UTF8ToString(userData));'
+            'calledMain = true;Module.onRunning=true;'
         ).replace(
             /**auto canvas position FS git@github.com:BinBashBanana/webretro.git */
             /HEAP32\[idx\s?\+\s?9\]\s?=\s?e\["movementX"\];\n?\s*HEAP32\[idx\s?\+\s?10\]\s?=\s?e\["movementY"\];\n?\s*var\s?rect\s?=\s?getBoundingClientRect\(target\);/,
@@ -569,37 +577,12 @@
                 JSEvents.previousScreenX = e.pageY;
                 JSEvents.previousScreenY = e.pageY
             }
-            console.log(e.type,e);
             if(target.widthNative!=rect.width){
                 let sacl = target.widthNative/rect.width;
-                if(e.pointerType=="touch"){
-                    HEAP32[idx + 11] = (e.clientX)*sacl -  e.width;
-                    HEAP32[idx + 12] = (e.clientY - e.height - rect.top)*sacl;
-
-                }else{
-                    HEAP32[idx + 11] = Math.ceil((e.clientX - rect.left)*sacl);
-                    HEAP32[idx + 12] = Math.ceil((e.clientY - rect.top)*sacl);
-
-                }
-            /*
-
-                if(Module.canvasX){
-                    HEAP32[idx + 11] = Math.ceil(e.clientX);
-                    HEAP32[idx + 12] = Math.ceil((e.clientY )*sacl);
-
-                }
-                if(rect.left==0){
-                    HEAP32[idx + 9] = e.movementX || e.layerX - JSEvents.previousScreenX;
-                    HEAP32[idx + 10] = e.movementY || e.layerY - JSEvents.previousScreenY;
-                    if (e.type !== "wheel" && e.type !== "mousewheel") {
-                        JSEvents.previousScreenX = e.layerX;
-                        JSEvents.previousScreenY = e.layerY
-                    }
-                }
-                */
+                HEAP32[idx + 11] = Math.ceil((e.clientX - rect.left)*sacl);
+                HEAP32[idx + 12] = Math.ceil((e.clientY - rect.top)*sacl);
                 return ;
             }
-            console.log(e.clientX - rect.left,e.clientY - rect.top);
             `
         ).replace(
             /var rect\s?=\s?__specialEventTargets\.indexOf\(target\)\s?\s?<\s?0\s?\?\s?__getBoundingClientRect\(target\)\s?:\s?\{\n?\s*"left":\s?0,\n?\s*"top":\s?0\n?\s*\};/,
@@ -618,6 +601,7 @@
             `Module.FS = FS;
             Module.GL = GL;
             Module.SYSCALLS = SYSCALLS;
+            Module.RA = RA;
             Object.assign(
                 Module.SyncFsDB,
                 PATH,
@@ -663,7 +647,7 @@
             if (Module.jsFile) Object.entries(Module.jsFile).forEach(entry => {
                 delete Module.jsFile[entry[0]];
             });
-            let info = ['-v', file || Module.gameFile | '--menu'];
+            let info = ['-verbose', file || Module.gameFile || '--menu'];
             if (Module.argumentsInfo) info = Module.argumentsInfo(file);
             Module.callMain(info);
         },
@@ -706,6 +690,7 @@
             'synckUpate': function (stream) {
                 if (!this.getStoreName(stream.node.mount)) return;
                 if (stream.path && stream.fd != null && !this.syncPath.includes(stream.path)) {
+                    this.syncPath.push(stream.path)
                     console.log(stream);
                     this.syncPromise(stream).then(result => this.syncMount());
                 }
@@ -963,35 +948,6 @@
                 })
             }
         },
-        'resetAudio': RA => {
-            Module.onceToclick(() => {
-                elm.hidden = true;
-                Module["pauseMainLoop"]();
-                RA.bufIndex = 0;
-                RA.bufOffset = 0
-                var ac = window["AudioContext"] || window["webkitAudioContext"];
-                if (!ac) return 0;
-                RA.context.close();
-                delete RA.context;
-                RA.context = new ac;
-                RA.numBuffers = Module.latency * RA.context.sampleRate / (1e3 * RA.BUFFER_SIZE) | 0;
-                if (RA.numBuffers < 2) RA.numBuffers = 2;
-                for (var i = 0; i < RA.numBuffers; i++) {
-                    RA.buffers[i] = RA.context.createBuffer(2, RA.BUFFER_SIZE, RA.context.sampleRate);
-                    RA.buffers[i].endTime = 0
-                }
-                RA.nonblock = false;
-                RA.startTime = 0;
-                RA.context.createGain();
-                window["setTimeout"](RA.setStartTime, 0);
-            });
-        },
-        'onceToclick': func => {
-            let elm = T.$('.g-mobile-click');
-            if(!elm.hidden) return;
-            elm.hidden = false;
-            T.once(elm, 'pointerup', () => {elm.hidden = true;func();})
-        },
         'resizeCanvasSize': wh => {
             if (wh) {
                 [Module.width, Module.height] = wh;
@@ -1208,6 +1164,46 @@
             ['gotpointercapture', 'dblclick', 'gesturestart', 'gesturechange', 'gestureend'].forEach(evt => this.on(elm, evt, e => Module.stopEvent(e), {
                 'passive': false
             }));
+        },
+        'RA_isRUN':'running',
+        'RA_isSTOP':'suspended',
+        'RA_REST':RA=>{
+            RA = RA||Module.RA;
+            if(!RA.context || RA.context.state !=Module.RA_isSTOP&&RA.context.state !=Module.RA_isRUN){
+                RA.bufIndex = 0;
+                RA.bufOffset = 0
+                var ac = window["AudioContext"] || window["webkitAudioContext"];
+                if(RA.context){
+                    RA.context.close();
+                    delete RA.context;
+                }
+                RA.context = new ac;
+                RA.numBuffers = Module.latency * RA.context.sampleRate / (1e3 * RA.BUFFER_SIZE) | 0;
+                if (RA.numBuffers < 2) RA.numBuffers = 2;
+                for (var i = 0; i < RA.numBuffers; i++) {
+                    RA.buffers[i] = RA.context.createBuffer(2, RA.BUFFER_SIZE, RA.context.sampleRate);
+                    RA.buffers[i].endTime = 0
+                }
+                RA.nonblock = false;
+                RA.startTime = 0;
+                RA.context.createGain();
+                RA.setStartTime();
+            }
+            RA.context.resume();
+            Module.resumeMainLoop();
+        },
+        'RA_RERUN': RA => {
+            Module.pauseMainLoop&&Module.pauseMainLoop();
+            Module.RA_CLICK(() => {
+                Module.RA_REST(RA);
+            });
+            return 1;
+        },
+        'RA_CLICK': func => {
+            let elm = T.$('.g-mobile-click');
+            if(!elm.hidden) return;
+            elm.hidden = false;
+            T.once(elm, 'pointerup', () => {elm.hidden = true;func();})
         }
     });
     this.docload(async () => {
