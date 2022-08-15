@@ -1,5 +1,5 @@
 (async function () {
-    let T=this,Module = T.Module,FS = Module.FS,CreateDataFile = Module.CreateDataFile,RAND = T.unitl.random;
+    let T=this,Module = T.Module,FS = Module.FS;
     Module.system_name = ['psx'];
     Module.system_ext = T.action.sysType['psx'];
     Module.system_ext.push('ccd');

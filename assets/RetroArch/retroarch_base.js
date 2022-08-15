@@ -173,7 +173,7 @@
             if (url) {
                 elm.removeAttribute('data-click');
                 T.FectchItem({
-                    'url': url+(url.includes('?')?'#':'?')+T.unitl.random,
+                    'url': url+(url.includes('?')?'#':'?')+RAND,
                     'unpack': true,
                     'store': 'data-libjs',
                     'key': 'bios-' + url.split('/').pop(),
