@@ -228,6 +228,7 @@ body {
 
         .g-sys,
         .g-forward,
+        .g-add,
         .g-hideother {
             background-size: cover;
             border-radius: 50%;
@@ -251,32 +252,7 @@ body {
         }
 
         .g-add {
-            position: relative;
-            width: 32px;
-            height: 32px;
-
-            &:before,
-            &:after {
-                content: " ";
-                color: #1e293b;
-                border-color: rgba(0, 0, 0, .1);
-                height: 2px;
-                width: 20px;
-                background: currentColor;
-                border-radius: 10px;
-                position: relative;
-                display: inline-block;
-                vertical-align: middle;
-                border-radius: 50%;
-                top: 0px;
-                left: 25%;
-
-            }
-
-            &:after {
-                top: -20px;
-                transform: rotate(90deg);
-            }
+            background-image: url(../../images/hotkey_digital.png);
         }
     }
 }

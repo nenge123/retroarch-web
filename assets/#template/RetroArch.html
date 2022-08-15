@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-cn-hans">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -55,7 +56,8 @@
                     </h3>
                     <div class="g-card-body">
                         <ul>
-                            <li>source:<a href="https://github/libretro/Retroarch" target="_blank">github/libretro/Retroarch</a></li>
+                            <li>source:<a href="https://github/libretro/Retroarch"
+                                    target="_blank">github/libretro/Retroarch</a></li>
                             <li>support:gba</li>
                         </ul>
                     </div>
@@ -144,6 +146,18 @@
                         </ul>
                     </div>
                 </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>psx</span>
+                        <span class="g-btn" data-sys="psx" data-mode="emulatorjs">启动OPEN</span>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:https://emulatorjs.com</li>
+                            <li>support:PlayStation</li>
+                        </ul>
+                    </div>
+                </li>
             </ul>
         </div>
         <div class="container game-ui no-select" hidden>
@@ -180,57 +194,22 @@
                 </div>
             </div>
         </div>
-        <div class="container g-file" hidden>
+        <div class="container g-file" data-downtext="下载" data-deltext="删除" data-nulltext="空空如也" data-writetext="写入"
+            data-editdir="改名" data-edittext="编辑" data-readtext="读取" data-cleartext="清空" hidden>
             <div class="g-box">
-                <h3>
-                    <span class="g-btn g-blue2" data-click="file-toggle-result"
-                        data-db="data-info">数据库:data-info/rooms</span>
-                    <span class="g-btn g-red" data-click="file-clear-data" data-db="data-rooms">清空</span>
-                    <span class="g-btn g-right" data-click="file-read-data" data-db="data-info" data-downtext="下载"
-                        data-deltext="删除" data-nulltext="空空如也" data-writetext="写入">读取</span>
-                </h3>
-                <ul class="result-data-info" data-click="file-result-action" hidden></ul>
+                <h3 class="g-file-header" data-db="data-info">数据库:data-info/rooms</h3>
             </div>
             <div class="g-box">
-                <h3>
-                    <span class="g-btn g-blue2" data-click="file-toggle-result"
-                        data-db="data-libjs">数据库:data-libjs缓存区</span>
-                    <span class="g-btn g-red" data-click="file-clear-data" data-db="data-libjs">清空</span>
-                    <span class="g-btn g-right" data-click="file-read-data" data-db="data-libjs" data-downtext="下载"
-                        data-deltext="删除" data-nulltext="空空如也">读取</span>
-                </h3>
+                <h3 class="g-file-header" data-db="data-libjs">数据库:data-libjs缓存区</h3>
                 <div>cores核心文件,glui是界面资源,非必要请勿删除</div>
-                <ul class="result-data-libjs" data-click="file-result-action" hidden></ul>
             </div>
             <div class="g-box">
-                <h3>
-                    <span class="g-btn g-blue2" data-click="file-toggle-result"
-                        data-db="retroarch">数据库:retroarch配置</span>
-                    <span class="g-btn g-red" data-click="file-clear-data" data-db="retroarch">清空</span>
-                    <span class="g-btn g-right" data-click="file-read-data" data-db="retroarch" data-downtext="下载"
-                        data-deltext="删除" data-nulltext="空空如也" data-path="/home/web_user/retroarch/userdata/"
-                        data-editdir="改名" data-edittext="编辑">读取</span>
-                </h3>
+                <h3 class="g-file-header" data-db="retroarch">数据库:retroarch配置</h3>
                 <div class="tips-retroarch"></div>
-                <ul class="result-retroarch" data-click="file-result-action" hidden></ul>
             </div>
             <div class="g-box">
-                <h3>
-                    <span class="g-btn g-blue2" data-click="file-toggle-result"
-                        data-db="userdata">数据库:userdata用户存档</span>
-                    <span class="g-btn g-red" data-click="file-clear-data" data-db="userdata">清空</span>
-                    <span class="g-btn g-right" data-click="file-read-data" data-db="userdata" data-downtext="下载"
-                        data-deltext="删除" data-nulltext="空空如也" data-path="/userdata/" data-editdir="改名"
-                        data-edittext="编辑">读取</span>
-                </h3>
+                <h3 class="g-file-header" data-db="userdata">数据库:userdata用户存档</h3>
                 <div class="tips-userdata"></div>
-                <ul class="result-userdata" data-click="file-result-action" hidden></ul>
-            </div>
-            <div class="setting-cfg">
-
-            </div>
-            <div class="setting-cores">
-
             </div>
         </div>
     </div>

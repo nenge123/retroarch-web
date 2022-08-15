@@ -4,9 +4,6 @@
     Module.system_ext = T.action.sysType['psx'];
     Module.system_ext.push('ccd');
     Module.system_bios = this.JSpath+'bios/psx.png';
-    await T.runaction('game-FS-mount-db',[FS]);
-    T.runaction('game-FS-mkdir-base',[FS]);
-    await T.runaction('game-FS-config-cfg',[FS,'/home/web_user/retroarch/userdata/retroarch.cfg','',true]);
     Module.canvasX = 0;
     Module.canvasY = 0;
     T.on(Module.canvas,'touchend',e=>{

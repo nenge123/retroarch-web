@@ -10,7 +10,7 @@
         },
         'closemenu': () => this.$('.g-header .g-menu').classList.remove('active'),
         'showsys': elm => {
-            if(!T.$('.g-header .g-hideother').hidden)return this.runaction('hideother');
+            if (!T.$('.g-header .g-hideother').hidden) return this.runaction('hideother');
             Module.KeyCode_click('menu_toggle');
         },
         'hideother': () => {
@@ -24,10 +24,10 @@
             Module.KeyCode_click('toggle_fast_forward');
         },
         'runtest': () => {
-            Module.callRunFile();
+            T.runaction('game-cores-run');
         },
-        'game-welcome-elm': () => {
-            let elm = T.$('.game-ui .g-welcome-result');
+        'game-welcome-elm': elm => {
+            elm = elm||T.$('.game-ui .g-welcome-result');
             if (elm) {
                 let div = T.$ce('div');
                 elm.appendChild(div);
@@ -35,21 +35,26 @@
             }
         },
         'game-welcome-additem': file => {
-            let div = this.runaction('game-welcome-elm');
-            if (div) {
-                let result = T.$('.game-ui .g-welcome-result');
-                if (result) {
-                    let html = '<span>' + file + '</span>';
-                    html += '<span class="g-btn" data-name="' + file + '" data-type="down">' + result.getAttribute('data-downtext') + '</span>';
-                    html += '<span class="g-btn g-right g-blue" data-name="' + file + '" data-type="file">' + result.getAttribute('data-loadtext') + '</span>';
-                    div.innerHTML = html;
+            let result = T.$('.game-ui .g-welcome-result');
+            if(!result) return;
+            let div = this.runaction('game-welcome-elm',[result]);
+            div.innerHTML = T.runaction('span_button_string', [file, {
+                'data-downtext': {
+                    'class': "g-btn",
+                    'name': file,
+                    'type': "down"
+                },
+                'data-loadtext': {
+                    'class': "g-btn g-right g-blue",
+                    'name': file,
+                    'type': "file"
                 }
+            }, result]);
 
-            }
         },
         'game-welcome-WriteFile': async (file, elm) => {
             let info = Module.RoomsInfo[file];
-            if(elm){
+            if (elm) {
                 elm.removeAttribute('data-name');
                 elm = elm.parentNode;
                 elm.innerHTML = '';
@@ -59,7 +64,9 @@
                 Module.CreateDataFile(info.file[0], contents);
                 this.runaction('game-welcome-additem', [info.file[0]]);
             } else {
-                let zipdata = await T.unitl.unFile(contents, text =>{if(elm)elm.innerHTML = text});
+                let zipdata = await T.unitl.unFile(contents, text => {
+                    if (elm) elm.innerHTML = text
+                });
                 if (zipdata instanceof Uint8Array) {
                     Module.CreateDataFile(info.file[0], zipdata);
                     this.runaction('game-welcome-additem', [info.file[0]]);
@@ -74,34 +81,41 @@
                     zipdata = null;
                 }
             }
-            if(elm)elm.remove();
+            if (elm) elm.remove();
             contents = null;
         },
         'game-welcome-ReadRooms': async () => {
+            this.$('.g-header .g-add').hidden = false;
+            this.$('.game-ui').hidden = false;
+            this.$('.g-main .g-start-ui').remove();
             Module.RoomsInfo = await T.GetItems('data-info');
-            let result = T.$('.game-ui .g-welcome-result'),
-                loadtext = "FS Write";
-            if (result) loadtext = result.getAttribute('data-loaddata');
+            let result = T.$('.game-ui .g-welcome-result');
+            if(!result) return ;
             Object.entries(Module.RoomsInfo).forEach(entry => {
                 let isShow = false;
-                let html = '<span>' + entry[0] + '</span>';
-                html += '<span class="g-btn g-right" data-name="' + entry[0] + '" data-type="info">' + loadtext + '</span>';
+                let html = T.runaction('span_button_string', [entry[0], {
+                    'data-loaddata': {
+                        'class': "g-btn g-right",
+                        'name': entry[0],
+                        'type': "info"
+                    }
+                }, result]);
                 html += '<ul>';
                 entry[1].file.forEach(val => {
                     html += '<li>' + val + '</li>';
-                    if (!isShow&&Module.system_ext&&Module.system_ext.includes(val.split('.').pop())) {
+                    if (!isShow && Module.system_ext && Module.system_ext.includes(val.split('.').pop())) {
                         isShow = true;
                     }
                 });
                 html += '</ul>';
-                if (!isShow){
+                if (!isShow) {
                     let entry_sys = entry[0].split('-')[0].split('|');
-                    entry_sys.forEach(val =>{
-                        if(!isShow)isShow = Module.system_name&&Module.system_name.includes(val)||false;
+                    entry_sys.forEach(val => {
+                        if (!isShow) isShow = Module.system_name && Module.system_name.includes(val) || false;
                     });
                 }
                 if (isShow) {
-                    let div = this.runaction('game-welcome-elm');
+                    let div = this.runaction('game-welcome-elm',[result]);
                     if (div) div.innerHTML = html;
                 }
             });
@@ -173,7 +187,7 @@
             if (url) {
                 elm.removeAttribute('data-click');
                 T.FectchItem({
-                    'url': url+(url.includes('?')?'#':'?')+RAND,
+                    'url': url + (url.includes('?') ? '#' : '?') + RAND,
                     'unpack': true,
                     'store': 'data-libjs',
                     'key': 'bios-' + url.split('/').pop(),
@@ -181,7 +195,7 @@
                         elm.innerHTML = text;
                     },
                     'success': data => {
-                        if(!data)return elm.innerHTML = elm.getAttribute('data-error');
+                        if (!data) return elm.innerHTML = elm.getAttribute('data-error');
                         Object.entries(data).forEach(entry => {
                             Module.CreateDataFile('/system/' + entry[0], entry[1]);
                         });
@@ -196,30 +210,30 @@
             if (file) {
                 let type = aelm.getAttribute("data-type");
                 if (type) {
-                    if (type == 'file') Module.callRunFile(file);
+                    if (type == 'file') T.runaction('game-cores-run',[file]);
                     else if (type == 'down') T.unitl.download(file.split('/').pop(), Module.FS.readFile(file));
                     else if (type == 'info') this.runaction('game-welcome-WriteFile', [file, aelm])
                 }
             }
         },
-        'game-FS-ui-file':async(elm,FS)=>{
-            if(Module.system_noui) return;
-            FS = FS||Module.FS;
+        'game-FS-ui-file': async ( FS,elm) => {
+            if (Module.system_noui) return;
+            FS = FS || Module.FS;
             let uiname = Module.system_ui || 'glui';
-            if (!FS.analyzePath('/bundle/assets/'+uiname+'/').exists) Object.entries(await this.FectchItem({
-                'url': this.JSpath + 'frontend/'+uiname+'-bundle.png?'+RAND,
+            if (!FS.analyzePath('/bundle/assets/' + uiname + '/').exists) Object.entries(await this.FectchItem({
+                'url': this.JSpath + 'frontend/' + uiname + '-bundle.png?' + RAND,
                 'unpack': true,
                 'store': 'data-libjs',
-                'key': 'retroarch-ui-'+uiname,
+                'key': 'retroarch-ui-' + uiname,
                 'version': T.version,
-                'process':text=>{
-                    if(elm)elm.innerHTML = text;
+                'process': text => {
+                    if (elm) elm.innerHTML = text;
                 }
             })).forEach(value => {
                 Module.CreateDataFile('/home/web_user/retroarch/bundle/' + value[0], value[1]);
             });
         },
-        'game-FS-mkdir-base':FS=>{
+        'game-FS-mkdir-base': FS => {
             [
                 '/userdata/saves',
                 '/userdata/states',
@@ -232,14 +246,14 @@
                 '/userdata/thumbnails',
                 '/system',
             ].forEach(
-                dir=>{
+                dir => {
                     if (!FS.analyzePath(dir).exists) {
                         FS.createPath('/', dir, !0, !0);
                     }
                 }
             )
         },
-        'game-FS-mount-db':async FS=>{
+        'game-FS-mount-db': async FS => {
             FS.createPath('/', '/userdata', !0, !0);
             FS.createPath('/', '/home/web_user/retroarch/userdata', !0, !0);
             FS.mount(Module.SyncFsDB, {}, '/userdata');
@@ -247,46 +261,83 @@
             await Module.SyncFsDB.mountReady();
 
         },
-        'game-FS-config-cfg':async (FS,path,data,isconfig)=>{
+        'game-FS-config-cfg': async (FS, path, data, isconfig) => {
             if (!FS.analyzePath(path).exists) {
-                let cfg_txt = '',name = path.split('/').pop();
-                if(isconfig){
-                    let configdata = await T.FectchItem({'url':this.JSpath + 'config/'+name+'.js?' + RAND})||'';
-                    if(configdata){
+                let cfg_txt = '',
+                    name = path.split('/').pop();
+                if (isconfig) {
+                    let configdata = await T.FectchItem({
+                        'url': this.JSpath + 'config/' + name + '.js?' + RAND
+                    }) || '';
+                    if (configdata) {
                         cfg_txt = new TextDecoder().decode(configdata);
                     }
                 }
-                if(data instanceof Uint8Array)data = new TextDecoder().decode(data);
-                if(data)cfg_txt += '\n'+data;
-                if(name=='retroarch.cfg'&&!data){
-                    cfg_txt += '\nsavefile_directory = "userdata/saves"'
-                    +'\nsavestate_directory = "userdata/states"'
-                    +'\nscreenshot_directory = "userdata/screenshots"'
-                    +'\nsystem_directory = "system/"'
-                    +'\nrgui_browser_directory = "userdata/rooms"'
-                    +'\ncore_assets_directory = "userdata/rooms/downloads"'
-                    +'\ncheat_database_path = "userdata/cheats"'
-                    +'\nrgui_config_directory = "userdata/config"'
-                    +'\ninput_remapping_directory = "userdata/config/remaps"'
-                    +'\nthumbnails_directory = "userdata/thumbnails"';
+                if (data instanceof Uint8Array) data = new TextDecoder().decode(data);
+                if (data) cfg_txt += '\n' + data;
+                if (name == 'retroarch.cfg' && !data) {
+                    cfg_txt += '\nsavefile_directory = "userdata/saves"' +
+                        '\nsavestate_directory = "userdata/states"' +
+                        '\nscreenshot_directory = "userdata/screenshots"' +
+                        '\nsystem_directory = "system/"' +
+                        '\nrgui_browser_directory = "userdata/rooms"' +
+                        '\ncore_assets_directory = "userdata/rooms/downloads"' +
+                        '\ncheat_database_path = "userdata/cheats"' +
+                        '\nrgui_config_directory = "userdata/config"' +
+                        '\ninput_remapping_directory = "userdata/config/remaps"' +
+                        '\nthumbnails_directory = "userdata/thumbnails"';
                 }
                 Module.CreateDataFile(path, cfg_txt);
             }
 
         },
-        'game-cores-start': async (ul,e) => {
+        'game-cores-run': file => {
+            T.$('.game-ui .g-welcome') && T.$('.game-ui .g-welcome').remove();
+            this.$('.g-header .g-forward').hidden = false;
+            if (Module.wasmBinary){
+                Module.wasmBinary=null;
+                delete Module.wasmBinary;
+            }
+            if (Module.memFile) {
+                Object.entries(Module.memFile).forEach(entry => {
+                    T.unitl.removeURL(entry[1]);
+                    Module.memFile[entry[0]] = null;
+                    delete Module.memFile[entry[0]];
+                });
+                Module.memFile = null;
+                delete Module.memFile;
+            }
+            if (Module.jsFile) {
+                Object.entries(Module.jsFile).forEach(entry => {
+                    Module.jsFile[entry[0]] = null;
+                    delete Module.jsFile[entry[0]];
+                });
+                Module.jsFile = null;
+                delete Module.jsFile;
+            }
+            let info = ['-verbose', file || Module.gameFile || '--menu'];
+            if (Module.argumentsInfo) info = Module.argumentsInfo(file);
+            Module.callMain(info);
+        },
+        'game-cores-base':async (FS,elm)=>{
+            await T.runaction('game-FS-mount-db',[FS]);
+            T.runaction('game-FS-mkdir-base',[FS]);
+            await T.runaction('game-FS-config-cfg',[FS,'/home/web_user/retroarch/userdata/retroarch.cfg','',true]);
+            await T.runaction('game-FS-ui-file', [FS,elm]);
+        },
+        'game-cores-start': async (ul, e) => {
             let elm = e.target;
-            if(!elm||!elm.getAttribute('data-sys')) return;
+            if (!elm || !elm.getAttribute('data-sys')) return;
             let sys = elm.getAttribute('data-sys');
             elm.removeAttribute('data-sys');
             this.Module.canvas = this.$('#canvas');
             let sys2 = sys.replace(/\-/g, '_'),
                 sysext = elm.getAttribute('data-mode') ? '_' + elm.getAttribute('data-mode') : '',
                 sysurl = this.JSpath + 'cores/' + sys2 + sysext + '.png?' + RAND;
-                Module.system_key = sys;
-                Module.system_keytext = sys2;
-                Module.system_keyend = sysext;
-                Module.system_fullkey = sys2 + sysext;
+            Module.system_key = sys;
+            Module.system_keytext = sys2;
+            Module.system_keyend = sysext;
+            Module.system_fullkey = sys2 + sysext;
             let corefile = await this.FectchItem({
                 'url': sysurl,
                 'unpack': true,
@@ -294,7 +345,7 @@
                 'store': 'data-libjs',
                 'key': 'cores-' + sys2 + sysext,
                 'version': T.version,
-                'process':text=>{
+                'process': text => {
                     elm.innerHTML = text;
                 }
             });
@@ -305,21 +356,31 @@
                 else if (/\.js/.test(entry[0])) Module.jsFile[entry[0]] = new TextDecoder().decode(entry[1]);
                 delete corefile[entry[0]];
             });
-            if (Module.jsFile[sys2 + '_libretro.js']) {
-                if(sys2=='mednafen_psx_hw'){
-                    Module.jsFile[sys2 + '_libretro.js'] = new TextDecoder().decode(await  await this.FectchItem({'url':this.JSpath + sys2  + '_libretro.js?' + RAND}));
+            Module.onRuntimeInitialized = async () => {
+                if(Module.myRuntimeInitialized){
+                    await Module.myRuntimeInitialized();
+                }else{
+                    await T.runaction('game-cores-base',[Module.FS,elm]);
                 }
-                Module.onRuntimeInitialized = async () => {
-                    await T.addJS(Module.jsFile['main.js'] ? Module.jsFile['main.js'] : this.JSpath + 'action/' + sys2 + sysext + '.js?' + RAND);
-                    await T.runaction('game-FS-ui-file',[elm,Module.FS]);
-                    this.$('.g-header .g-add').hidden = false;
-                    this.$('.game-ui').hidden = false;
-                    this.$('.g-main .g-start-ui').remove();
-                    T.runaction('game-welcome-ReadRooms');
-                    corefile = null;
-                };
+                await T.runaction('game-welcome-ReadRooms');
+                corefile = null;
+            };
+            if (Module.jsFile[sys2 + '_libretro.js']) {
+                if (sys2 == 'mednafen_psx_hw') {
+                    Module.jsFile[sys2 + '_libretro.js'] = new TextDecoder().decode(await await this.FectchItem({
+                        'url': this.JSpath + sys2 + '_libretro.js?' + RAND
+                    }));
+                }
+                await T.addJS(Module.jsFile['main.js'] ? Module.jsFile['main.js'] : this.JSpath + 'action/' + sys2 + sysext + '.js?' + RAND);
                 let coreTxt = this.runaction('retroarchjs_replace', [Module.jsFile[sys2 + '_libretro.js']]);
                 new Function('Module', coreTxt)(Module);
+            }else if(Module.jsFile['retroarch.js']){
+                window.Module = Module;
+                await T.addJS(Module.jsFile['main.js'] ? Module.jsFile['main.js'] : this.JSpath + 'action/' + sys2 + sysext + '.js?' + RAND);
+                let coreTxt = this.runaction('retroarchjs_replace', [Module.jsFile['retroarch.js']]);
+                if(Module.myReplace)coreTxt = Module.myReplace(coreTxt);
+                await T.addJS(coreTxt);
+                Module.RetroarchJS&&Module.RetroarchJS();
             }
         },
         'file-toggle-result': elm => {
@@ -332,17 +393,35 @@
         },
         'file-read-data': async elm => {
             let db = elm.getAttribute('data-db');
+            let gelm = T.$('.g-main .g-file');
             let html = '';
             if (db == 'data-info') {
                 let db2 = 'data-rooms';
                 Object.entries(await T.GetItems(db)).forEach(entry => {
                     let file = entry[0];
                     html += '<li>';
-                    html += '<span>' + file + '</span>';
-                    html += '<span class="g-btn g-red" data-name="' + file + '" data-type="del" data-db="' + db2 + '">' + elm.getAttribute('data-deltext') + '</span>';
-                    
-                    if(Module.onRunning)html += '<span class="g-btn g-right g-blue2" data-name="' + file + '" data-type="write" data-db="' + db2 + '">' + elm.getAttribute('data-writetext') + '</span>';
-                    else html += '<span class="g-btn g-right g-blue" data-name="' + file + '" data-type="down" data-db="' + db2 + '">' + elm.getAttribute('data-downtext') + '</span>';
+                    let spandata = {
+                        'data-deltext': {
+                            'class': 'g-btn g-red',
+                            'name': file,
+                            'type': 'del',
+                            'db': db,
+                        },
+                        'data-writetext': {
+                            'class': 'g-btn g-right g-blue2',
+                            'name': file,
+                            'type': 'write',
+                            'db': db2,
+                        },
+                        'data-downtext': {
+                            'class': 'g-btn g-right g-blue',
+                            'name': file,
+                            'type': 'down',
+                            'db': db2,
+                        },
+                    };
+                    delete spandata[Module.onRunning ? 'data-downtext' :  'data-writetext'];
+                    html += T.runaction('span_button_string', [file, spandata, gelm]);
                     if (entry[1].file) {
                         html += '<ul>';
                         entry[1].file.forEach(f => {
@@ -362,21 +441,40 @@
                         let file = entry;
                         if (path) file = file.replace(path, '');
                         html += '<li>';
-                        html += '<span>' + file + '</span>';
-                        html += '<span class="g-btn g-red" data-name="' + entry + '" data-type="del" data-db="' + db + '">' + elm.getAttribute('data-deltext')+'</span>';
-                        if (!islibjs) {
-                            if (['cfg', 'opt', 'cht'].includes(file.split('.').pop())) {
-                                html += '<span class="g-btn g-blue" data-name="' + entry + '" data-type="edit" data-db="' + db + '">' + elm.getAttribute('data-edittext') + '</span>';
+                        let spandata = {
+                            'data-deltext': {
+                                'class': "g-btn g-red",
+                                'name': entry,
+                                'type': "del",
+                                'db': db,
+                            },
+                            'data-edittext': {
+                                'class': "g-btn g-blue",
+                                'name': entry,
+                                'type': "edit",
+                                'db': db,
+                            },
+                            'data-downtext': {
+                                'class': "g-btn g-right g-blue",
+                                'name': entry,
+                                'type': "down",
+                                'db': db,
+                            },
 
-                            }
-                            html += '<span class="g-btn g-right g-blue" data-name="' + entry + '" data-type="down" data-db="' + db + '">' + elm.getAttribute('data-downtext') + '</span>';
+                        };
+                        if (islibjs) {
+                            delete spandata['data-edittext'];
+                            delete spandata['data-downtext'];
+                        } else {
+                            if (!['cfg', 'opt', 'cht'].includes(file.split('.').pop())) delete spandata['data-edittext'];
                         }
+                        html += T.runaction('span_button_string', [file, spandata, gelm]);
                         html += '</li>';
 
                     });
                 }
             }
-            if (!html) html = elm.getAttribute('data-nulltext');
+            if (!html) html = gelm.getAttribute('data-nulltext');
             this.$('.g-file .result-' + db).innerHTML = html;
             this.$('.g-file .result-' + db).hidden = false;
 
@@ -387,13 +485,14 @@
             let db = newelm.getAttribute('data-db');
             let file = newelm.getAttribute('data-name');
             if (db) {
-                if (type == 'down') T.unitl.download(file.split('/').pop(), await T.getContent(db, file));
-                else if (type == 'del') {
+                if (type == 'down'){
+                    T.unitl.download(file.split('/').pop(), await T.getContent(db=='data-info'?'data-rooms':db, file));
+                }else if (type == 'del') {
                     await T.removeItem(db, file);
-                    if (db == 'data-rooms') await T.removeItem('data-info', file);
+                    if (db == 'data-info') await T.removeItem('data-rooms', file);
                     newelm.parentNode.remove();
-                }else if(type=='write'){
-                    this.runaction('game-welcome-WriteFile',[file,newelm]);
+                } else if (type == 'write') {
+                    this.runaction('game-welcome-WriteFile', [file, newelm]);
                 }
             }
         },
@@ -419,11 +518,11 @@
             };
             input.click();
         },
-        'setting-callback':(elm,e)=>{
+        'setting-callback': (elm, e) => {
             let target = e.target;
-            if(target instanceof Element){
+            if (target instanceof Element) {
                 let setting = target.getAttribute('data-setting');
-                if(setting)T.runaction('setting-'+setting,[target,e]);
+                if (setting) T.runaction('setting-' + setting, [target, e]);
             }
         },
         'setting-showfile': elm => {
@@ -436,9 +535,9 @@
         },
         'setting-quality': (elm) => {
             let p = elm.getAttribute('data-p');
-            if(p){
+            if (p) {
                 p = parseInt(p);
-                Module.canvasQuality = p>0?p:720;
+                Module.canvasQuality = p > 0 ? p : 720;
                 Module.resizeCanvasSize();
                 T.runaction('closemenu');
             }
@@ -481,6 +580,27 @@
                 this.Module.Record = recorder;
                 return recorder;
             }
+        },
+        'span_button_string': (first, data, elm) => {
+            let html = '';
+            if (first) html += '<span>' + first + '</span>';
+            if (data) {
+                Object.entries(data).forEach(entry => {
+                    let name = entry[0];
+                    if (/^data-/.test(name)) name = elm.getAttribute(name);
+                    if (!entry[1]) {
+                        html += '<span>' + name + '</span>';
+                    } else {
+                        html += '<span';
+                        Object.entries(entry[1]).forEach(key => {
+                            if (key[0] == 'class') html += ' class="' + key[1] + '"';
+                            else html += ' data-' + key[0] + '="' + key[1] + '"';
+                        });
+                        html += '>' + name + '</span>';
+                    }
+                });
+            }
+            return html;
         },
         'getSys': name => {
             let ext = name.split('.').pop();
@@ -530,45 +650,45 @@
             'mame': ['zip']
         },
         'retroarchjs_replace': txt => txt.replace(
-            /_RWebAudioInit\(latency\)\s?\{/,
-            '_RWebAudioInit(latency){Module.latency=latency;try{'
-        )
-        .replace(
-            /Module\["pauseMainLoop"\]\(\);\n?\s*return\s?1\n?\s*\}/,
-            'Module["pauseMainLoop"]();return 1;}catch(e){Module.RA_RERUN(RA);return 1;}}'
-        ).replace(
-            /function\s?_RWebAudioStart\(\)\s?\{/,
-            'function _RWebAudioStart() {if(RA.context.state!="running"){Module.RA_RERUN(RA);}'
-        ).replace(
-            /_RWebAudioWrite\(\)\s?\{/,
-            '_RWebAudioWrite(buf,size){if(RA.context.state!="running")return Module.RA_RERUN(RA);'
-        ).replace(
-            /_RWebAudioWriteAvail\(\)\s?\{/,
-            `_RWebAudioWriteAvail (){return 0;`
-        ).replace(
-            /function\s?_RWebCamInit\(caps1,\s?caps2,\s?width,\s?height\)\s?\{/,
-            `function _RWebCamInit( caps1, caps2, width, height) {alert(44);return 0;`
-        ).replace(
-            /\"mouse(up|down|move|enter|leave)\"/g,
-            '"pointer$1"'
-        ).replace(
-            /if\s?\(node\.usedBytes\s?===\s?0\s?&&\s?position\s?===\s?0\)\s?\{\n?\s*node\.contents\s?=\s?new\s?Uint8Array\(buffer\.subarray\(offset,\s?offset\s?\+\s?length\)\);/,
-            'if (node.usedBytes === 0 && position === 0) {if(this.SyncFsDB)this.SyncFsDB.synckUpate(stream);node.contents = new Uint8Array(buffer.subarray(offset, offset + length));'
-        ).replace(
-            /**auto sync FS git@github.com:BinBashBanana/webretro.git */
-            /if\s?\(node\.usedBytes\s?===\s?0\s?&&\s?position\s?===\s?0\)\s?\{\n?\s*node\.contents\s?=\s?buffer\.slice\(offset,\s?offset\s?\+\s?length\);/,
-            'if (node.usedBytes === 0 && position === 0) {if(this.SyncFsDB)this.SyncFsDB.synckUpate(stream);node.contents = buffer.slice(offset, offset + length);'
-        ).replace(
-            /msync:\s?MEMFS\.stream_ops\.msync/,
-            `'msync':MEMFS.stream_ops.msync,
+                /_RWebAudioInit\(latency\)\s?\{/,
+                '_RWebAudioInit(latency){Module.latency=latency;try{'
+            )
+            .replace(
+                /Module\["pauseMainLoop"\]\(\);\n?\s*return\s?1\n?\s*\}/,
+                'Module["pauseMainLoop"]();return 1;}catch(e){Module.RA_RERUN(RA);return 1;}}'
+            ).replace(
+                /function\s?_RWebAudioStart\(\)\s?\{/,
+                'function _RWebAudioStart() {if(RA.context.state!="running"){Module.RA_RERUN(RA);}'
+            ).replace(
+                /_RWebAudioWrite\(\)\s?\{/,
+                '_RWebAudioWrite(buf,size){if(RA.context.state!="running")return Module.RA_RERUN(RA);'
+            ).replace(
+                /_RWebAudioWriteAvail\(\)\s?\{/,
+                `_RWebAudioWriteAvail (){return 0;`
+            ).replace(
+                /function\s?_RWebCamInit\(caps1,\s?caps2,\s?width,\s?height\)\s?\{/,
+                `function _RWebCamInit( caps1, caps2, width, height) {alert(44);return 0;`
+            ).replace(
+                /\"mouse(up|down|move|enter|leave)\"/g,
+                '"pointer$1"'
+            ).replace(
+                /if\s?\(node\.usedBytes\s?===\s?0\s?&&\s?position\s?===\s?0\)\s?\{\n?\s*node\.contents\s?=\s?new\s?Uint8Array\(buffer\.subarray\(offset,\s?offset\s?\+\s?length\)\);/,
+                'if (node.usedBytes === 0 && position === 0) {if(this.SyncFsDB)this.SyncFsDB.synckUpate(stream);node.contents = new Uint8Array(buffer.subarray(offset, offset + length));'
+            ).replace(
+                /**auto sync FS git@github.com:BinBashBanana/webretro.git */
+                /if\s?\(node\.usedBytes\s?===\s?0\s?&&\s?position\s?===\s?0\)\s?\{\n?\s*node\.contents\s?=\s?buffer\.slice\(offset,\s?offset\s?\+\s?length\);/,
+                'if (node.usedBytes === 0 && position === 0) {if(this.SyncFsDB)this.SyncFsDB.synckUpate(stream);node.contents = buffer.slice(offset, offset + length);'
+            ).replace(
+                /msync:\s?MEMFS\.stream_ops\.msync/,
+                `'msync':MEMFS.stream_ops.msync,
             'SyncFsDB':Module.SyncFsDB,`
-        ).replace(
-            /calledMain\s?=\s?true/,
-            'calledMain = true;Module.onRunning=true;'
-        ).replace(
-            /**auto canvas position FS git@github.com:BinBashBanana/webretro.git */
-            /HEAP32\[idx\s?\+\s?9\]\s?=\s?e\["movementX"\];\n?\s*HEAP32\[idx\s?\+\s?10\]\s?=\s?e\["movementY"\];\n?\s*var\s?rect\s?=\s?getBoundingClientRect\(target\);/,
-            `var rect = getBoundingClientRect(target);
+            ).replace(
+                /calledMain\s?=\s?true/,
+                'calledMain = true;Module.onRunning=true;'
+            ).replace(
+                /**auto canvas position FS git@github.com:BinBashBanana/webretro.git */
+                /HEAP32\[idx\s?\+\s?9\]\s?=\s?e\["movementX"\];\n?\s*HEAP32\[idx\s?\+\s?10\]\s?=\s?e\["movementY"\];\n?\s*var\s?rect\s?=\s?getBoundingClientRect\(target\);/,
+                `var rect = getBoundingClientRect(target);
             var movementX = e.movementX || e.pageY - JSEvents.previousScreenX;
             var movementY = e.movementY || e.pageY - JSEvents.previousScreenY;
             HEAP32[idx + 9] = movementX;
@@ -584,9 +704,9 @@
                 return ;
             }
             `
-        ).replace(
-            /var rect\s?=\s?__specialEventTargets\.indexOf\(target\)\s?\s?<\s?0\s?\?\s?__getBoundingClientRect\(target\)\s?:\s?\{\n?\s*"left":\s?0,\n?\s*"top":\s?0\n?\s*\};/,
-            `target = target  instanceof Element?target:Module.canvas;
+            ).replace(
+                /var rect\s?=\s?__specialEventTargets\.indexOf\(target\)\s?\s?<\s?0\s?\?\s?__getBoundingClientRect\(target\)\s?:\s?\{\n?\s*"left":\s?0,\n?\s*"top":\s?0\n?\s*\};/,
+                `target = target  instanceof Element?target:Module.canvas;
             var rect = __getBoundingClientRect(target);
             if(rect.width!=target.widthNative){
                 let sacl = target.widthNative/rect.width;
@@ -596,9 +716,9 @@
                 };
             }
             `
-        ).replace(
-            /if\s?\(Module\["noInitialRun"\]\)/,
-            `Module.FS = FS;
+            ).replace(
+                /if\s?\(Module\["noInitialRun"\]\)/,
+                `Module.FS = FS;
             Module.GL = GL;
             Module.SYSCALLS = SYSCALLS;
             Module.RA = RA;
@@ -617,7 +737,7 @@
                 }
             );
             if(Module["noInitialRun"])`
-        )
+            )
     };
     Object.assign(Module, {
         'onRunning': false,
@@ -634,22 +754,6 @@
         'locateFile': function (path) {
             if (this.memFile[path.split('/').pop()]) return this.memFile[path.split('/').pop()];
             return T.JSpath + 'cores/' + path;
-        },
-        'callRunFile': file => {
-            T.$('.game-ui .g-welcome') && T.$('.game-ui .g-welcome').remove();
-            //this.$('.g-header .g-add').hidden = true;
-            this.$('.g-header .g-forward').hidden = false;
-            if (Module.wasmBinary) delete Module.wasmBinary;
-            if (Module.memFile) Object.entries(Module.memFile).forEach(entry => {
-                T.unitl.removeURL(entry[1]);
-                delete Module.memFile[entry[0]];
-            });
-            if (Module.jsFile) Object.entries(Module.jsFile).forEach(entry => {
-                delete Module.jsFile[entry[0]];
-            });
-            let info = ['-verbose', file || Module.gameFile || '--menu'];
-            if (Module.argumentsInfo) info = Module.argumentsInfo(file);
-            Module.callMain(info);
         },
         'SyncFsDB': {
             'mountList': [],
@@ -981,7 +1085,7 @@
         'CreateDataFile': (path, data, bool) => {
             let FS = Module.FS,
                 dir = path.split('/');
-            if(dir.length)dir = dir.slice(0, -1).join('/');
+            if (dir.length) dir = dir.slice(0, -1).join('/');
             else dir = '/';
             if (!FS.analyzePath(dir).exists) {
                 let pdir = dir.split('/').slice(0, -1).join('/');
@@ -1165,15 +1269,15 @@
                 'passive': false
             }));
         },
-        'RA_isRUN':'running',
-        'RA_isSTOP':'suspended',
-        'RA_REST':RA=>{
-            RA = RA||Module.RA;
-            if(!RA.context || RA.context.state !=Module.RA_isSTOP&&RA.context.state !=Module.RA_isRUN){
+        'RA_isRUN': 'running',
+        'RA_isSTOP': 'suspended',
+        'RA_REST': RA => {
+            RA = RA || Module.RA;
+            if (!RA.context || RA.context.state != Module.RA_isSTOP && RA.context.state != Module.RA_isRUN) {
                 RA.bufIndex = 0;
                 RA.bufOffset = 0
                 var ac = window["AudioContext"] || window["webkitAudioContext"];
-                if(RA.context){
+                if (RA.context) {
                     RA.context.close();
                     delete RA.context;
                 }
@@ -1193,7 +1297,7 @@
             Module.resumeMainLoop();
         },
         'RA_RERUN': RA => {
-            Module.pauseMainLoop&&Module.pauseMainLoop();
+            Module.pauseMainLoop && Module.pauseMainLoop();
             Module.RA_CLICK(() => {
                 Module.RA_REST(RA);
             });
@@ -1201,12 +1305,41 @@
         },
         'RA_CLICK': func => {
             let elm = T.$('.g-mobile-click');
-            if(!elm.hidden) return;
+            if (!elm.hidden) return;
             elm.hidden = false;
-            T.once(elm, 'pointerup', () => {elm.hidden = true;func();})
+            T.once(elm, 'pointerup', () => {
+                elm.hidden = true;
+                func();
+            })
         }
     });
     this.docload(async () => {
+        this.$$('.g-main .g-file .g-file-header').forEach(elm => {
+            let data = {},
+                db = elm.getAttribute('data-db');
+            data[elm.innerHTML] = {
+                'class': "g-btn g-blue2",
+                'click': "file-toggle-result",
+                db
+            };
+            elm.innerHTML = T.runaction('span_button_string', ['', Object.assign(data, {
+                'data-cleartext': {
+                    'class': "g-btn g-red",
+                    'click': "file-clear-data",
+                    db
+                },
+                'data-readtext': {
+                    'class': "g-btn g-right",
+                    'click': "file-read-data",
+                    db
+                }
+            }), this.$('.g-main .g-file')]);
+            let ul = T.$ce('ul');
+            ul.classList.add('result-' + db);
+            ul.setAttribute('data-click', 'file-result-action');
+            ul.hidden = true;
+            elm.parentNode.appendChild(ul);
+        });
         this.$$('*[data-click]').forEach(elm => this.on(elm, 'pointerup', function (e) {
             let click = this.getAttribute('data-click');
             click && T.runaction(click, [this, e]);
