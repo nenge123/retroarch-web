@@ -250,7 +250,12 @@
         'game-FS-config-cfg':async (FS,path,data,isconfig)=>{
             if (!FS.analyzePath(path).exists) {
                 let cfg_txt = '',name = path.split('/').pop();
-                if(isconfig)cfg_txt = await T.FectchItem({'url':this.JSpath + 'config/'+name+'.js?' + RAND})||'';
+                if(isconfig){
+                    let configdata = await T.FectchItem({'url':this.JSpath + 'config/'+name+'.js?' + RAND})||'';
+                    if(configdata){
+                        cfg_txt = new TextDecoder().decode(configdata);
+                    }
+                }
                 if(data instanceof Uint8Array)data = new TextDecoder().decode(data);
                 if(data)cfg_txt += '\n'+data;
                 if(name=='retroarch.cfg'&&!data){

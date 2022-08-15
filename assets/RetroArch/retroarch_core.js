@@ -237,9 +237,7 @@ const Nenge = new class {
                     let [name, data] = entry,
                     filename = name.split('/').pop(),
                         filetype = this.unitl.gettype(filename),
-                        filedata = new File([data], filename, {
-                            'type': filetype
-                        });
+                        filedata = new File([data], filename, {'type': filetype});
                     T.setItem(
                         ARG.store,
                         key + '-' + filename, {
