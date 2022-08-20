@@ -3,5 +3,5 @@
     Module.system_name = ['gba'];
     Module.system_ext = T.action.sysType['gba'];
     Module.system_bios = this.JSpath+'bios/gba.png';
-    this.$('.game-ui .g-ctrl').classList.add('gba');
+    this.$('.g-game-ctrl').classList.add('gba');
 }).call(Nenge);

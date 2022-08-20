@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no,width=device-width">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta http-equiv="cache-control" content="no-cache" />
     <meta name="x-content-type-options" content="nosniff" />
     <meta name="renderer" content="webkit">
@@ -16,15 +17,14 @@
 <body>
     <div class="g-header">
         <div class="container no-select">
-            <div class="g-menu" data-click="showmenu">
+            <div class="g-btn-menu" data-click="menu-show">
                 <span class="g-menu-icon"></span>
             </div>
             <div class="g-menu-list">
                 <div class="g-list" data-click="setting-callback">
                     <div data-setting="showfile">文件管理File</div>
                     <div data-setting="fanyi">翻译设置AI</div>
-                    <div data-setting="retroarch">配置设置Configuration</div>
-                    <div data-setting="cores">核心设置Core Configuration</div>
+                    <div data-setting="ctrlkey">键位设置ctrlkey</div>
                     <div data-setting='record-action'>开始/结束录制start/stop Record</div>
                     <div data-setting="reload">刷新返回reflashBack</div>
                     <div>
@@ -40,24 +40,23 @@
                     <div data-setting="help">帮助Help</div>
                 </div>
             </div>
-            <div class="g-mbtn g-sys" data-click="showsys"></div>
-            <div class="g-mbtn g-hideother" data-click="hideother" hidden></div>
-            <div class="g-mbtn g-add" data-click="game-content-add" hidden></div>
-            <div class="g-mbtn g-forward" data-click="forward" hidden></div>
+            <div class="g-btn-sys" data-click="game-cores-sys"></div>
+            <div class="g-btn-hide" data-click="menu-hide" hidden></div>
+            <div class="g-btn-add" data-click="game-content-add" hidden></div>
+            <div class="g-btn-forward" data-click="game-cores-forward" hidden></div>
         </div>
     </div>
     <div class="g-main">
         <div class="container g-start-ui">
-            <ul class="g-start-list" data-click="game-cores-start">
+            <ul class="g-start-list" data-click="game-cores-install">
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>Vba-next</span>
-                        <span class="g-btn" data-sys="vba-next" data-mode="libretro">启动OPEN</span>
+                        <button class="g-btn g-blue" data-sys="vba-next" data-mode="libretro">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
-                            <li>source:<a href="https://github/libretro/Retroarch"
-                                    target="_blank">github/libretro/Retroarch</a></li>
+                            <li>source:github/libretro/Retroarch</li>
                             <li>support:gba</li>
                         </ul>
                     </div>
@@ -65,7 +64,7 @@
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>mgba</span>
-                        <span class="g-btn" data-sys="mgba" data-mode="libretro">启动OPEN</span>
+                        <button class="g-btn" data-sys="mgba" data-mode="libretro">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -76,8 +75,20 @@
                 </li>
                 <li class="g-cores">
                     <h3 class="g-card-header">
+                        <span>mgba</span>
+                        <button class="g-btn" data-sys="mgba" data-mode="BinBashBanana">启动OPEN</button>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/BinBashBanana/webretro</li>
+                            <li>support:gb/gbc/gba</li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
                         <span>mednafen_psx_hw</span>
-                        <span class="g-btn" data-sys="mednafen_psx_hw" data-mode="BinBashBanana">启动OPEN</span>
+                        <button class="g-btn" data-sys="mednafen_psx_hw" data-mode="BinBashBanana">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -89,7 +100,7 @@
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>mupen64plus_next</span>
-                        <span class="g-btn" data-sys="mupen64plus_next" data-mode="BinBashBanana">启动OPEN</span>
+                        <button class="g-btn" data-sys="mupen64plus_next" data-mode="BinBashBanana">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -101,7 +112,7 @@
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>snes9x</span>
-                        <span class="g-btn" data-sys="snes9x" data-mode="libretro">启动OPEN</span>
+                        <button class="g-btn" data-sys="snes9x" data-mode="libretro">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -113,7 +124,7 @@
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>gambatte</span>
-                        <span class="g-btn" data-sys="gambatte" data-mode="libretro">启动OPEN</span>
+                        <button class="g-btn" data-sys="gambatte" data-mode="libretro">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -125,7 +136,7 @@
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>genesis_plus_gx</span>
-                        <span class="g-btn" data-sys="genesis_plus_gx" data-mode="libretro">启动OPEN</span>
+                        <button class="g-btn" data-sys="genesis_plus_gx" data-mode="libretro">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -137,7 +148,7 @@
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>nestopia</span>
-                        <span class="g-btn" data-sys="nestopia" data-mode="libretro">启动OPEN</span>
+                        <button class="g-btn" data-sys="nestopia" data-mode="libretro">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -149,7 +160,7 @@
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>psx</span>
-                        <span class="g-btn" data-sys="psx" data-mode="emulatorjs">启动OPEN</span>
+                        <button class="g-btn" data-sys="psx" data-mode="emulatorjs">启动OPEN</button>
                     </h3>
                     <div class="g-card-body">
                         <ul>
@@ -160,21 +171,26 @@
                 </li>
             </ul>
         </div>
-        <div class="container game-ui no-select" hidden>
+        <div class="container g-game-ui no-select" hidden>
+            <span class="g-btn g-mobile-click" hidden>手机需要再次点击启动!</span>
             <div class="game-container">
-                <span class="g-mobile-click" hidden>手机需要再次点击启动!</span>
-                <div class="g-welcome">
+                <div class="g-game-welcome">
                     <h3>
                         <span>请选择装载内容</span>
-                        <span class="g-btn" data-click="runtest">test</span>
-                        <span class="g-btn g-right g-blue2" data-click="game-content-bios" data-sussces="完成!"
-                            data-error="失败!">写入bios</span>
+                        <button class="g-btn" data-click="menu-reload">test</button>
+                        <button class="g-btn g-right g-blue2" data-click="game-content-bios" data-sussces="完成!"
+                            data-error="失败!">写入bios</button>
                     </h3>
-                    <div class="g-welcome-result" data-click="game-content-write" data-loadtext="启动" data-loaddata="写入"
-                        data-downtext="下载"></div>
+                    <div class="g-game-welcome-result" data-click="game-content-write" data-loadtext="启动"
+                        data-loaddata="写入" data-downtext="下载"></div>
                 </div>
                 <canvas id="canvas"></canvas>
-                <div class="g-ctrl">
+                <div class="g-game-ctrl" hidden>
+                    <div class="vk" data-key="load_state" data-k="loadstate">即读</div>
+                    <div class="vk" data-key="save_state" data-k="savestate">即存</div>
+                    <div class="vk" data-k="ai" data-click="game-ai">翻译</div>
+                    <div class="vk" data-key="pause_toggle" data-k="stop">暂停</div>
+                    <div class="vk" data-k="save" data-click="game-action-save">存档</div>
                     <div class="vk" data-key="player1_l" data-k="l">L</div>
                     <div class="vk" data-key="player1_r" data-k="r">R</div>
                     <div class="vk" data-key="player1_a" data-k="a">A</div>
@@ -193,28 +209,46 @@
                     <div class="vk" data-key="player1_down,player1_right" data-k="dr"></div>
                 </div>
             </div>
+            <div class="g-game-showtxt" hidden></div>
         </div>
-        <div class="container g-file" data-downtext="下载" data-deltext="删除" data-nulltext="空空如也" data-writetext="写入"
-            data-editdir="改名" data-edittext="编辑" data-readtext="读取" data-cleartext="清空" hidden>
-            <div class="g-box">
-                <h3 class="g-file-header" data-db="data-info">数据库:data-info/rooms</h3>
+        <div class="container g-file-ui" hidden>
+            <div class="g-file-manager" data-downtext="下载" data-deltext="删除" data-nulltext="空空如也" data-writetext="写入"
+                data-rename="改名" data-edittext="编辑" data-readtext="读取" data-cleartext="清空">
+                <div class="g-box">
+                    <h3 class="g-file-header" data-db="data-info">数据库:data-info/rooms</h3>
+                </div>
+                <div class="g-box">
+                    <h3 class="g-file-header" data-db="data-libjs">数据库:data-libjs缓存区</h3>
+                    <div>cores核心文件,glui是界面资源,非必要请勿删除</div>
+                </div>
+                <div class="g-box">
+                    <h3 class="g-file-header" data-db="retroarch" data-path="/home/web_user/retroarch/">数据库:retroarch配置
+                    </h3>
+                </div>
+                <div class="g-box">
+                    <h3 class="g-file-header" data-db="userdata" data-path="/userdata">数据库:userdata用户存档</h3>
+                </div>
+
             </div>
-            <div class="g-box">
-                <h3 class="g-file-header" data-db="data-libjs">数据库:data-libjs缓存区</h3>
-                <div>cores核心文件,glui是界面资源,非必要请勿删除</div>
-            </div>
-            <div class="g-box">
-                <h3 class="g-file-header" data-db="retroarch">数据库:retroarch配置</h3>
-                <div class="tips-retroarch"></div>
-            </div>
-            <div class="g-box">
-                <h3 class="g-file-header" data-db="userdata">数据库:userdata用户存档</h3>
-                <div class="tips-userdata"></div>
+            <div class="g-file-editor" hidden>
+                <div class="g-header">
+                    <span>文件:</span>
+                    <span class="g-file-editor-name">我的世界</span>
+                    <button class="g-btn g-right g-red" data-click="file-editor-hide">关闭</button>
+                </div>
+                <div class="g-body">
+                    <div class="g-title">
+                        <label class="g-full"><input tabindex="0" type="text" placeholder="文件路径" value="" class="g-file-editor-path"></label>
+                        <label><button class="g-btn g-blue2" data-click="file-data-submit" data-db="">修改</button></label>
+                    </div>
+                    <div class="g-content">
+                        <label><textarea title="" placeholder="输入内容" tabindex="1" class="g-file-editor-content"></textarea></label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?<?php echo time();?>"></script>
     <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?<?php echo time();?>"></script>
 </body>
-
 </html>

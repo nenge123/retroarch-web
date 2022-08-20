@@ -3,5 +3,5 @@
     Module.system_name = ['nes'];
     Module.system_ext = T.action.sysType['nes'];
     Module.system_bios = this.JSpath+'bios/nes.png';
-    this.$('.game-ui .g-ctrl').classList.add('nes');
+    this.$('.g-game-ctrl').classList.add('nes');
 }).call(Nenge);

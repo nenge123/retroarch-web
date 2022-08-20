@@ -3,5 +3,5 @@
     Module.system_name = ['sega'];
     Module.system_ext = T.action.sysType['sega'];
     Module.system_bios = this.JSpath+'bios/sega.png';
-    this.$('.game-ui .g-ctrl').classList.add('sega');
+    this.$('.g-game-ctrl').classList.add('sega');
 }).call(Nenge);

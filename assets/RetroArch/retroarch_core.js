@@ -102,8 +102,8 @@ const Nenge = new class {
                 save[index > 0 ? name + part + index : name] = maxsize * index;
             }
             let basecontent = {};
-            Object.entries(data).forEach(entry=>{
-                if(entry[0]!='contents')basecontent[entry[0]] = entry[1];
+            Object.entries(data).forEach(entry => {
+                if (entry[0] != 'contents') basecontent[entry[0]] = entry[1];
             });
             let result = await Promise.all(
                 Object.entries(save).map(async entry => {
@@ -112,7 +112,7 @@ const Nenge = new class {
                     return await T.setItem(
                         store,
                         key,
-                        Object.assign({},basecontent,{
+                        Object.assign({}, basecontent, {
                             'contents': new Uint8Array(data.contents.subarray(start, end)),
 
                         })
@@ -237,7 +237,9 @@ const Nenge = new class {
                     let [name, data] = entry,
                     filename = name.split('/').pop(),
                         filetype = this.unitl.gettype(filename),
-                        filedata = new File([data], filename, {'type': filetype});
+                        filedata = new File([data], filename, {
+                            'type': filetype
+                        });
                     T.setItem(
                         ARG.store,
                         key + '-' + filename, {
@@ -436,7 +438,8 @@ const Nenge = new class {
             return await ZipWriter.close(comment);
         }
         async unFile(u8, cb, password, key) {
-            let action = null,u8Mime;
+            let action = null,
+                u8Mime;
             if (u8 instanceof Blob) {
                 if (u8.name) {
                     let type = u8.name.split('?')[0].split('.').pop().toLowerCase();
@@ -759,15 +762,21 @@ const Nenge = new class {
         window.customElements.define(myelement, MyElement);
     }
     DATE = new Date();
-    on = (elm, etype, fun, opt) => elm.addEventListener(etype, fun, opt ? opt : false);
-    un = (elm, etype, fun, opt) => elm.removeEventListener(etype, fun, opt ? opt : false);
-    once(elm, etype, fun, opt) {
-        let newfuc = () => {
-            this.un(elm, etype, newfuc, opt);
-            fun();
-        };
-        this.on(elm, etype, newfuc, opt);
-
+    on(elm, evt, fun, opt, cap) {
+        (elm || document).addEventListener(evt, fun, opt === false ? {
+            passive: false
+        } : opt, cap);
+    }
+    un(elm, evt, fun, opt,cap) {
+        (elm || document).removeEventListener(evt, fun,opt === false ? {
+            passive: false
+        } : opt,cap);
+    }
+    once(elm, evt, fun, opt,cap) {
+        return this.on(elm, evt, fun, {
+            passive: false,
+            once: true
+        },cap);
     }
     $(e, f) {
         if (e instanceof Function) return this.docload(e);
@@ -870,14 +879,10 @@ const Nenge = new class {
     docload(f) {
         return new Promise(complete => {
             if (document.readyState == 'loading') {
-                let x = document,
-                    d = 'DOMContentLoaded',
-                    func = () => {
-                        this.un(x, d, func);
-                        f && f.call(this);
-                        complete(true);
-                    };
-                return this.on(document, 'DOMContentLoaded', func);
+                return this.once(document, 'DOMContentLoaded', () => {
+                    f && f.call(this);
+                    complete(true);
+            });
             }
             f && f.call(this);
             complete(true);
@@ -888,7 +893,7 @@ const Nenge = new class {
 
         this.LibPack = this.JSpath + 'libjs.png';
     }
-    isMobile = 'touchend' in document;
+    isMobile = 'ontouchend' in document;
     async appendscript(js) {
         let url = /^(\/|https?:\/\/|static\/js\/|data\/)/.test(js) ? js : this.JSpath + js;
         let data = await this.FectchItem({
