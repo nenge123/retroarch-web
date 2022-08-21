@@ -381,12 +381,12 @@
             elm.removeAttribute('data-sys');
             T.Module.canvas = T.$('#canvas');
             let sys2 = sys.replace(/\-/g, '_'),
-                sysext = elm.getAttribute('data-mode') ? elm.getAttribute('data-mode')+ '/'  : '',
-                sysurl = T.JSpath + 'cores/'+ sysext + sys2  + '.png?' + RAND;
+                sysext = elm.getAttribute('data-mode')||'',
+                sysurl = T.JSpath + 'cores/'+ (sysext?sysext+'/':'') + sys2  + '.png?' + RAND;
             Module.system_key = sys;
             Module.system_keytext = sys2;
             Module.system_keyend = sysext;
-            Module.system_fullkey = sys2 + sysext.replace(/\\/g,'_');
+            Module.system_fullkey = sys2 + (sysext?'_'+sysext:'');
             let corefile = await T.FectchItem({
                 'url': sysurl,
                 'unpack': true,
@@ -414,7 +414,7 @@
                 }
                 await T.runaction('game-welcome-ReadRooms');
             };
-            let loadjs = Module.jsFile['main.js'] ? Module.jsFile['main.js'] : T.JSpath + 'action/'+ sysext + sys2  + '.js?' + RAND;
+            let loadjs = Module.jsFile['main.js'] ? Module.jsFile['main.js'] : T.JSpath + 'action/'+ (sysext?sysext+'/':'') + sys2  + '.js?' + RAND;
             window.Module = Module;
             let asmfile = Module.jsFile[sys2 + '_libretro.js'] || Module.jsFile['retroarch.js'];
             if (asmfile) {
@@ -1252,6 +1252,35 @@
                 })
             }
         },
+        'MKFILE': (path, data, bool) => {
+            let FS = Module.FS,
+                dir = path.split('/');
+            if (dir.length) dir = dir.slice(0, -1).join('/');
+            else dir = '/';
+            if (!FS.analyzePath(dir).exists) {
+                let pdir = dir.split('/').slice(0, -1).join('/');
+                if (!FS.analyzePath(pdir).exists) FS.createPath('/', pdir, !0, !0);
+                FS.createPath('/', dir, !0, !0);
+            }
+            if (typeof data == 'string') data = new TextEncoder().encode(data);
+            if (bool) {
+                if (FS.analyzePath(path).exists) FS.unlink(path);
+                FS.writeFile(path, data, {
+                    canOwn: true,
+                    encoding: "binary"
+                });
+            } else if (!FS.analyzePath(path).exists) {
+                FS.writeFile(path, data, {
+                    canOwn: true,
+                    encoding: "binary"
+                });
+            }
+        },
+        'set_fs_init': (m, n, PATH) => {
+            n.stream_ops.write = m.FileDB.ops_write;
+            if (n.ops_table) n.ops_table.file.stream.write = m.FileDB.ops_write;
+            m.FileDB = Object.assign(PATH, n, m.FileDB);
+        },
         'resizeCanvasSize': wh => {
             if (wh) {
                 [Module.width, Module.height] = wh;
@@ -1280,30 +1309,6 @@
                     //Module.canvasHeight = p;
                     Module.setCanvasSize(p * AspectRatio, p);
                 }
-            }
-        },
-        'MKFILE': (path, data, bool) => {
-            let FS = Module.FS,
-                dir = path.split('/');
-            if (dir.length) dir = dir.slice(0, -1).join('/');
-            else dir = '/';
-            if (!FS.analyzePath(dir).exists) {
-                let pdir = dir.split('/').slice(0, -1).join('/');
-                if (!FS.analyzePath(pdir).exists) FS.createPath('/', pdir, !0, !0);
-                FS.createPath('/', dir, !0, !0);
-            }
-            if (typeof data == 'string') data = new TextEncoder().encode(data);
-            if (bool) {
-                if (FS.analyzePath(path).exists) FS.unlink(path);
-                FS.writeFile(path, data, {
-                    canOwn: true,
-                    encoding: "binary"
-                });
-            } else if (!FS.analyzePath(path).exists) {
-                FS.writeFile(path, data, {
-                    canOwn: true,
-                    encoding: "binary"
-                });
             }
         },
         'KeyDown': (key, e) => {
@@ -1757,11 +1762,6 @@
                 };
             }
             return rect;
-        },
-        'set_fs_init': (m, n, PATH) => {
-            n.stream_ops.write = m.FileDB.ops_write;
-            if (n.ops_table) n.ops_table.file.stream.write = m.FileDB.ops_write;
-            m.FileDB = Object.assign(PATH, n, m.FileDB);
         },
     });
     this.docload(async () => {
