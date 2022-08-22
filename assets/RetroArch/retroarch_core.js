@@ -74,14 +74,11 @@ const Nenge = new class {
             maxsize = T.maxsize,
             part = T.part,
             type = data.type || '';
+        if(data instanceof Promise)data = await data;
         if ((typeof data == 'string' && data > maxsize / 2) || (typeof data.contents == 'string' && data.contents > maxsize / 2)) {
             if (data.contents) data.contents = new TextEncoder().encode(data.contents);
-            else data = {
-                'contents': new TextEncoder().encode(data)
-            };
-            Object.assign(data, {
-                'type': 'string'
-            });
+            else data = {'contents': new TextEncoder().encode(data)};
+            Object.assign(data, {'type': 'string'});
         } else if ((data instanceof Blob && data.size > maxsize) || (data.contents instanceof Blob && data.contents.size > maxsize)) {
             let filetype = (data.contents || data).type,
                 filesize = (data.contents || data).size;
@@ -114,7 +111,6 @@ const Nenge = new class {
                         key,
                         Object.assign({}, basecontent, {
                             'contents': new Uint8Array(data.contents.subarray(start, end)),
-
                         })
                     );
                 })
@@ -132,9 +128,24 @@ const Nenge = new class {
             };
         });
     }
-    async removeItem(store, name) {
+    async removeItem(store, name,clear) {
         let T = this,
             db = await T.GET_DB(store);
+        if(clear){
+            let contents = await T.unitl.getItem(T.transaction(store, db), name);
+            console.log(contents);
+            if(contents&&contents.filesize&&contents.filesize>T.maxsize){
+                let maxLen = Math.ceil(contents.filesize / T.maxsize),
+                    part = T.part,
+                    keys = name.split(part)[0],
+                    result = '';
+                    result += await T.removeItem(store,keys)+'\n';
+                    for (let i = 1; i < maxLen; i++)result+=await T.removeItem(store,keys+part+i)+'\n';
+                    contents = null;
+                    return result;
+
+            }
+        }
         return new Promise((resolve, reject) => {
             T.transaction(store, db).delete(name).onsuccess = e => resolve(`delete:${name}`);
         });
@@ -154,6 +165,23 @@ const Nenge = new class {
                 callback(result), cb && cb(result)
             };
         });
+    }
+    async getAllCursor(store,key, cb){
+        let T = this,db = await T.GET_DB(store);
+        return new Promise(callback => {
+            let entries = {};
+        T.transaction(store, db,!0).index(key).openKeyCursor().onsuccess = evt => {
+            let cursor = evt.target.result;
+            if (cursor) {
+                entries[cursor.primaryKey] = {"timestamp": cursor.key};
+                cursor.continue()
+            } else {
+                cb && cb(entries);
+                callback(entries)
+            }
+        }
+        })
+
     }
     async GetItems(store, cb) {
         let T = this,
@@ -560,11 +588,13 @@ const Nenge = new class {
                 store: ARG
             };
             let mb = ARG.db || this.DB_STORE[DB_NAME];
-            if (mb && (ARG.store && mb.objectStoreNames.contains(ARG.store) || !ARG.store)) {
+            if(ARG.version){
+                mb.close();
+            }else if (mb && (ARG.store && mb.objectStoreNames.contains(ARG.store) || !ARG.store)) {
                 return mb;
             } else if (mb) {
                 ARG.version = mb.version + 1;
-                mb.close();
+                return getDB(DB_NAME, ARG);
             }
             return new Promise((resolve, reject) => {
                 let req = self.indexedDB.open(DB_NAME, ARG.version);
@@ -701,9 +731,22 @@ const Nenge = new class {
     }
     async clearDB(storeName) {
         let T = this;
-        if (!storeName) return T.indexedDB.deleteDatabase(T.DB_NAME);
-        var db = await T.GET_DB(storeName);
+        if (!storeName) return ;
+        let db = await T.GET_DB(storeName);
         T.transaction(storeName, db).clear();
+    }
+    async deleteDB(storeName) {
+        let T = this;
+        if (!storeName) return  T.indexedDB.deleteDatabase(T.DB_NAME);
+        let db = await T.GET_DB(storeName);
+        let version = db.version+1;
+        db.close();
+        return await this.unitl.getDB(T.DB_NAME, {
+            version,
+            upgrad:obj=>{
+                obj.db.deleteObjectStore(storeName);
+            }
+        });
     }
     get StoreNames() {
         return this.DB.objectStoreNames

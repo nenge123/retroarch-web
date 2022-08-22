@@ -12,7 +12,7 @@
     <meta name="x-content-type-options" content="nosniff" />
     <meta name="renderer" content="webkit">
     <title>RetroArch Web</title>
-    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661040559" />
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661169468" />
 </head>
 
 <body>
@@ -21,6 +21,10 @@
             <div class="g-btn-menu" data-click="menu-show">
                 <span class="g-menu-icon"></span>
             </div>
+            <div class="g-btn-sys" data-click="game-cores-sys"></div>
+            <div class="g-btn-hide" data-click="menu-hide" hidden></div>
+            <div class="g-btn-add" data-click="game-content-add" hidden></div>
+            <div class="g-btn-forward" data-click="game-cores-forward" hidden></div>
             <div class="g-menu-list">
                 <div class="g-list" data-click="setting-callback">
                     <div data-setting="showfile">文件管理File</div>
@@ -41,10 +45,6 @@
                     <div data-setting="help">帮助Help</div>
                 </div>
             </div>
-            <div class="g-btn-sys" data-click="game-cores-sys"></div>
-            <div class="g-btn-hide" data-click="menu-hide" hidden></div>
-            <div class="g-btn-add" data-click="game-content-add" hidden></div>
-            <div class="g-btn-forward" data-click="game-cores-forward" hidden></div>
         </div>
     </div>
     <div class="g-main">
@@ -173,7 +173,7 @@
             </ul>
         </div>
         <div class="container g-game-ui no-select" hidden>
-            <span class="g-btn g-mobile-click" hidden>手机需要再次点击启动!</span>
+            <span class="g-btn g-mobile-click" hidden>手机需要再次点击确保音乐正常启动!</span>
             <div class="game-container">
                 <div class="g-game-welcome">
                     <h3>
@@ -213,8 +213,8 @@
             <div class="g-game-showtxt" hidden></div>
         </div>
         <div class="container g-file-ui" hidden>
-            <div class="g-file-manager" data-downtext="下载" data-deltext="删除" data-nulltext="空空如也" data-writetext="写入"
-                data-rename="改名" data-edittext="编辑" data-readtext="读取" data-cleartext="清空">
+            <div class="g-file-manager no-select" data-downtext="下载" data-deltext="删除" data-nulltext="空空如也" data-writetext="写入"
+                data-rename="改名" data-edittext="编辑" data-readtext="读取" data-cleartext="清空" data-updirtext="上一层目录">
                 <div class="g-box">
                     <h3 class="g-file-header" data-db="data-info">数据库:data-info/rooms</h3>
                 </div>
@@ -249,7 +249,9 @@
             </div>
         </div>
     </div>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?1661040560"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?1661040560"></script>
+    <div class="add-home-app" hidden>添加到主屏幕/应用</div>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?1661169468"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_mount.js?1661169468"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?1661169468"></script>
 </body>
 </html>

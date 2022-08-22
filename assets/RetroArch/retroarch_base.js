@@ -286,8 +286,8 @@
 
         },
         'game-FS-config-path': () => {
-            return '\nmenu_mouse_enable = "true"'+
-                '\nmenu_pointer_enable = "true"'+
+            return '\nmenu_mouse_enable = "true"' +
+                '\nmenu_pointer_enable = "true"' +
                 '\nsavefile_directory = "userdata/saves"' +
                 '\nsavestate_directory = "userdata/states"' +
                 '\nscreenshot_directory = "userdata/screenshots"' +
@@ -306,7 +306,7 @@
             if (!info) return;
             T.$('.g-game-welcome') && T.$('.g-game-welcome').remove();
             this.$('.g-btn-forward').hidden = false;
-            if(T.isMobile)T.$('.g-game-ctrl').hidden = false;
+            if (T.isMobile) T.$('.g-game-ctrl').hidden = false;
             if (!Module.wasmBinary) {
                 Module.wasmBinary = null;
                 delete Module.wasmBinary;
@@ -328,16 +328,11 @@
                 Module.jsFile = null;
                 delete Module.jsFile;
             }
-            try{
-            console.log(info);
-            Module.callMain(info);
-            this.on(document, 'contextmenu', e => Module.stopEvent(e));
-            T.runaction('game-cores-bindkey');
-            T.runaction('game-touch-key');
-
-            }catch(e){
-                console.log(e);
-            }
+                console.log(info);
+                Module.callMain(info);
+                this.on(document, 'contextmenu', e => Module.stopEvent(e));
+                T.runaction('game-cores-bindkey');
+                T.runaction('game-touch-key');
         },
         'game-cores-forward': elm => {
             Module.KeyCode_click('toggle_fast_forward');
@@ -381,12 +376,12 @@
             elm.removeAttribute('data-sys');
             T.Module.canvas = T.$('#canvas');
             let sys2 = sys.replace(/\-/g, '_'),
-                sysext = elm.getAttribute('data-mode')||'',
-                sysurl = T.JSpath + 'cores/'+ (sysext?sysext+'/':'') + sys2  + '.png?' + RAND;
+                sysext = elm.getAttribute('data-mode') || '',
+                sysurl = T.JSpath + 'cores/' + (sysext ? sysext + '/' : '') + sys2 + '.png?' + RAND;
             Module.system_key = sys;
             Module.system_keytext = sys2;
             Module.system_keyend = sysext;
-            Module.system_fullkey = sys2 + (sysext?'_'+sysext:'');
+            Module.system_fullkey = sys2 + (sysext ? '_' + sysext : '');
             let corefile = await T.FectchItem({
                 'url': sysurl,
                 'unpack': true,
@@ -414,7 +409,7 @@
                 }
                 await T.runaction('game-welcome-ReadRooms');
             };
-            let loadjs = Module.jsFile['main.js'] ? Module.jsFile['main.js'] : T.JSpath + 'action/'+ (sysext?sysext+'/':'') + sys2  + '.js?' + RAND;
+            let loadjs = Module.jsFile['main.js'] ? Module.jsFile['main.js'] : T.JSpath + 'action/' + (sysext ? sysext + '/' : '') + sys2 + '.js?' + RAND;
             window.Module = Module;
             let asmfile = Module.jsFile[sys2 + '_libretro.js'] || Module.jsFile['retroarch.js'];
             if (asmfile) {
@@ -519,10 +514,14 @@
                     elm.parentNode.appendChild(v);
                 })
             });
-            let edit_content = T.$('.g-file-editor-content'),edit_path = T.$('.g-file-editor-path');
-            ['keydown','keyup'].forEach(
-                evt=>[edit_content,edit_path].forEach(
-                    elm=>T.on(elm,evt,e=>{e.stopPropagation();;return true},true)
+            let edit_content = T.$('.g-file-editor-content'),
+                edit_path = T.$('.g-file-editor-path');
+            ['keydown', 'keyup'].forEach(
+                evt => [edit_content, edit_path].forEach(
+                    elm => T.on(elm, evt, e => {
+                        e.stopPropagation();;
+                        return true
+                    }, true)
                 )
             );
         },
@@ -536,8 +535,11 @@
         },
         'file-data-read': async elm => {
             let db = elm.getAttribute('data-db');
-            let gelm = T.$('.g-file-manager');
-            let html = '';
+            let gelm = T.$('.g-file-manager'),
+                div = T.$('.g-result[data-db=' + db + ']'),
+                html = '';
+                if(!div)return;
+                div.hidden = false;
             if (db == 'data-info') {
                 let db2 = 'data-rooms';
                 Object.entries(await T.GetItems(db)).forEach(entry => {
@@ -576,8 +578,8 @@
                 });
             } else {
                 let islibjs = !['userdata', 'retroarch'].includes(db);
-                if (!Module.FS || islibjs) {
-                    let path = elm.getAttribute('data-path');
+                let path = elm.getAttribute('data-path');
+                if (!Module.FileDB || !path) {
                     if (path) {
                         let pelm = this.$('.g-tips[data-db=' + db + ']');
                         pelm.hidden = false;
@@ -617,14 +619,49 @@
                         }
                         html += T.runaction('span_button_string', [file, spandata, gelm]);
                         html += '</li>';
-
                     });
+                }else{
+                    return T.runaction('file-data-fs',[path,db,path])
                 }
             }
             if (!html) html = gelm.getAttribute('data-nulltext');
-            this.$('.g-result[data-db=' + db + ']').innerHTML = html;
-            this.$('.g-result[data-db=' + db + ']').hidden = false;
+            div.innerHTML = html;
 
+        },
+        'file-data-fs':(path,db)=>{
+            let html = '',
+                gelm = T.$('.g-file-manager');
+
+            Module.FS.readdir(path).forEach(t=>{
+                if(t=='.') return;
+                let name = path,type='readpath';
+                    if(t !='..'){
+                        name += '/'+t;
+                    }
+                    else if(path!='/'){
+                        name = path.split('/').slice(0,-1).join('/') || '/';
+                        t = gelm.getAttribute('data-updirtext');
+                    }else return;
+                html += '<li>';
+                let spandata = {};
+                spandata[t] = {'class': "g-btn g-blue",type,name,db};
+                let ext = t.split('.')[1];
+                if(ext){
+                    delete spandata[t].type;
+                    if(['cfg', 'opt', 'cht'].includes(ext)){
+                        spandata['data-edittext'] = {'class': "g-btn g-blue2",name,'type': "edit",'db': db,}
+                    }
+                    spandata['data-downtext']={
+                        'class': "g-btn g-right g-blue",
+                        'type': "fsdown",
+                        'db': db,
+                        name
+                    };
+                }
+                html += T.runaction('span_button_string', ['', spandata, gelm]);
+                html += '</li>';
+            });
+            T.$('.g-result[data-db=' + db + ']').innerHTML = html;
         },
         'file-result-action': async (elm, e) => {
             let newelm = e.target;
@@ -642,8 +679,13 @@
                     this.runaction('game-welcome-WriteFile', [file, newelm]);
                 } else if (type == 'edit') {
                     T.runaction('file-data-edit', [elm, file, db]);
+                } else if (type == 'readpath') {
+                    T.runaction('file-data-fs', [file,db,newelm.getAttribute('data-base')]);
+                } else if (type == 'fsdown') {
+                    T.unitl.download(file.split('/').pop(), Module.FS.readFile(file));
                 }
             }
+            e.preventDefault();
         },
         'file-data-clear': async elm => {
             let db = elm.getAttribute('data-db');
@@ -851,17 +893,13 @@
         },
         'retroarchjs_replace': txt => txt.replace(
                 /_RWebAudioInit\(latency\)\s?\{/,
-                '_RWebAudioInit(latency){Module.latency=latency;try{'
-            )
-            .replace(
-                /Module\["pauseMainLoop"\]\(\);\n?\s*return\s?1\n?\s*\}/,
-                'Module["pauseMainLoop"]();return 1;}catch(e){Module.RA_RERUN(RA);return 1;}}'
+                '_RWebAudioInit(latency){Module.latency=latency;'
             ).replace(
                 /function\s?_RWebAudioStart\(\)\s?\{/,
-                'function _RWebAudioStart() {if(RA.context.state!="running") return Module.RA_RERUN(RA);'
+                'function _RWebAudioStart() {if(RA.context && RA.context.state != Module.RA_isRUN) return Module.RA_RERUN(RA);'
             ).replace(
                 /_RWebAudioWrite\(\)\s?\{/,
-                '_RWebAudioWrite(buf,size){if(RA.context.state!="running")return Module.RA_RERUN(RA);'
+                '_RWebAudioWrite(buf,size){if(RA.context&&RA.context.state != Module.RA_isRUN)return Module.RA_RERUN(RA);\n'
             ).replace(
                 /function\s?_RWebCamInit\(caps1,\s?caps2,\s?width,\s?height\)\s?\{/,
                 `function _RWebCamInit( caps1, caps2, width, height) {return 0;`
@@ -896,7 +934,7 @@
                 `;((m,n)=>{
                         m.FS = FS,m.GL = GL,m.SYSCALLS = SYSCALLS,m.RA = RA;
                         if(!m.HEAP8)m.HEAP8 = HEAP8;
-                        m.set_fs_init(m,n,PATH);
+                        m.set_fs_init(n,FS||m.FS,HEAP8||m.HEAP8);
                         m.run=run;
                     })(Module,MEMFS);`
             ),
@@ -914,343 +952,6 @@
         'locateFile': function (path) {
             if (this.memFile[path.split('/').pop()]) return this.memFile[path.split('/').pop()];
             return T.JSpath + 'cores/' + path;
-        },
-        'FileDB': {
-            'mount': function (mount) {
-                if (!Module.FS.analyzePath(mount.mountpoint).exists) {
-                    Module.FS.createPath('/', mount.mountpoint, !0, !0);
-                }
-                let len = mount.mountpoint.split('/').length;
-                let node = this.createNode(len < 3 ?Module.FS.root:null,len < 3 ? mount.mountpoint.split('/').pop() : mount.mountpoint.replace(/^\//,''), 16384 | 511, 0);
-                if (this.getStoreName(mount)) {
-                    this.sync_mount_promise.push(this.syncfs(mount, e => console.log(e)));
-                }
-                return node;
-            },
-            'ops_write': function (stream, buffer, offset, length, position, canOwn) {
-                if (buffer.buffer === Module.HEAP8.buffer) {
-                    canOwn = false
-                }
-                if (!length) return 0;
-                var node = stream.node;
-                node.timestamp = Date.now();
-                if (buffer.subarray && (!node.contents || node.contents.subarray)) {
-                    if (canOwn) {
-                        node.contents = buffer.subarray(offset, offset + length);
-                        node.usedBytes = length;
-                        return length
-                    } else if (node.usedBytes === 0 && position === 0) {
-                        Module.FileDB.sync_file_update(stream);
-                        node.contents = new Uint8Array(buffer.subarray(offset, offset + length));
-                        node.usedBytes = length;
-                        return length
-                    } else if (position + length <= node.usedBytes) {
-                        node.contents.set(buffer.subarray(offset, offset + length), position);
-                        return length
-                    }
-                }
-                Module.FileDB.expandFileStorage(node, position + length);
-                if (node.contents.subarray && buffer.subarray) node.contents.set(buffer.subarray(offset, offset + length), position);
-                else {
-                    for (var i = 0; i < length; i++) {
-                        node.contents[position + i] = buffer[offset + i]
-                    }
-                }
-                node.usedBytes = Math.max(node.usedBytes, position + length);
-                return length
-            },
-            'mountReady': async function () {
-                return await Promise.all(this.sync_mount_promise);
-            },
-            'getStoreName': mount => {
-                return T.DB_STORE_MAP[mount.mountpoint];
-            },
-            'syncfs': async function (mount, callback, error) {
-                error = error || (e => {
-                    console.log(e);
-                });
-                let storeName = this.getStoreName(mount);
-                if (!storeName) return error('indexDB Store Name erro', mount);
-                let IsReady = mount.isReady,
-                    local = await this.getLocalSet(mount),
-                    remote = await this.getRemoteSet(storeName),
-                    src = !IsReady ? remote : local,
-                    dst = !IsReady ? local : remote;
-                mount.isReady = true;
-                if (!remote || remote.entries.length == 0) return error('no data');
-                let {
-                    create,
-                    remove,
-                    total
-                } = this.sync_file_check(src.entries, dst.entries, IsReady);
-                if (!total) {
-                    return error('no file need to sysfs');
-                }
-                let result = await this.sync_file_write({
-                    create,
-                    remove,
-                    store: T.transaction(storeName, remote.db),
-                    type: dst.type
-                });
-                (callback instanceof Function) && callback(result);
-                return result;
-            },
-            'sync_file_promise': function (stream) {
-                return new Promise((resolve, reject) => {
-                    if (!this.sync_mount_list.includes(stream.node.mount)) this.sync_mount_list.push(stream.node.mount);
-                    let Timer = setInterval(() => {
-                        if (Timer != this.syncTime) {
-                            clearInterval(Timer);
-                            reject('other update');
-                        }
-                        if (stream.fd == null) {
-                            clearInterval(Timer);
-                            resolve('ok');
-                        }
-                    }, T.speed);
-                    if (this.syncTime) clearInterval(this.syncTime);
-                    this.syncTime = Timer;
-                });
-            },
-            'sync_file_update': function (stream) {
-                if (!this.getStoreName(stream.node.mount)) return;
-                if (stream.path && stream.fd != null && !this.sync_mount_path.includes(stream.path)) {
-                    this.sync_mount_path.push(stream.path)
-                    this.sync_file_promise(stream).then(result => this.sync_mount_action());
-                }
-            },
-            'sync_file_check': function (src, dst, IsReady) {
-                let create = [],
-                    remove = [],
-                    total = 0;
-                Object.entries(src).forEach(entry => {
-                    var e2 = dst[entry[0]];
-                    if (!e2 || entry[1].timestamp > e2.timestamp) {
-                        create.push(entry[0]);
-                        total++
-                    }
-
-                });
-                if (IsReady) Object.entries(dst).forEach(entry => {
-                    var e2 = src[entry[0]];
-                    if (!e2) {
-                        remove.push(entry[0]);
-                        total++
-                    }
-
-                });
-                return {
-                    create,
-                    remove,
-                    total
-                };
-            },
-            'sync_file_write': async function (ARG) {
-                let {
-                    create,
-                    remove,
-                    store,
-                    type
-                } = ARG,
-                result = "";
-                create.sort();
-                remove.sort();
-                for (let a = 0; a < create.length; a++) {
-                    let path = create[a];
-                    if (type === "local") {
-                        let entry = await this.loadRemoteEntry(store, path);
-                        if (entry) {
-                            result += await this.storeLocalEntry(path, entry) || ''
-                        }
-                    } else {
-                        let entry2 = await this.loadLocalEntry(path);
-                        result += await this.storeRemoteEntry(store, path, entry2)
-                    }
-                }
-                for (let b = 0; b < remove.length; b++) {
-                    let path2 = remove[b];
-                    if (type === "local") {
-                        result += await this.removeLocalEntry(path2);
-                    } else {
-                        result += await this.removeRemoteEntry(store, path2)
-                    }
-                }
-                return result;
-            },
-            'sync_mount_promise': [],
-            'sync_mount_list': [],
-            'sync_mount_action': async function () {
-                if (this.sync_mount_list.length) {
-                    let list = this.sync_mount_list.map(async mount => this.syncfs(mount));
-                    this.sync_mount_list = [];
-                    this.sync_mount_path = [];
-                    await Promise.all(list);
-                }
-            },
-            'sync_mount_path': [],
-            'loadLocalEntry': async function (path) {
-                let FS = Module.FS,
-                    stat, node;
-                if (FS.analyzePath(path).exists) {
-                    var lookup = FS.lookupPath(path);
-                    node = lookup.node;
-                    stat = FS.stat(path)
-                } else {
-                    return reject(e)
-                }
-                if (FS.isDir(stat.mode)) {
-                    return {
-                        timestamp: stat.mtime,
-                        mode: stat.mode
-                    };
-                } else if (FS.isFile(stat.mode)) {
-                    node.contents = this.getFileDataAsTypedArray(node);
-                    return {
-                        timestamp: stat.mtime,
-                        mode: stat.mode,
-                        contents: node.contents
-                    };
-                } else {
-                    T.Err("node type not supported")
-                }
-            },
-            'storeLocalEntry': async function (path, entry) {
-                let FS = Module.FS,
-                    p = path && path.split('/').slice(0, -1).join('/');
-                if (p && !FS.analyzePath(p).exists) FS.createPath('/', p, !0, !0);
-                if (FS.isDir(entry.mode)) {
-                    FS.mkdir(path, entry.mode)
-                } else if (FS.isFile(entry.mode)) {
-                    FS.writeFile(path, entry.contents, {
-                        canOwn: true,
-                        encoding: "binary"
-                    });
-                } else {
-                    T.Err("node type not supported");
-                }
-                FS.chmod(path, entry.mode);
-                FS.utime(path, entry.timestamp, entry.timestamp);
-                return 'FS saved:' + path + '\n';
-            },
-            'removeLocalEntry': function (path) {
-                let FS = Module.FS;
-                return new Promise((resolve, reject) => {
-                    if (FS.analyzePath(path).exists) {
-                        var stat = FS.stat(path);
-                        if (FS.isDir(stat.mode)) {
-                            FS.rmdir(path)
-                        } else if (FS.isFile(stat.mode)) {
-                            FS.unlink(path)
-                        }
-                        resolve('FS unlink:' + path + '\n')
-                    } else {
-                        return reject(path + 'is not exists\n')
-                    }
-                })
-            },
-            'loadRemoteEntry': function (store, path) {
-                return new Promise((resolve, reject) => {
-                    var req = store.get(path);
-                    req.onsuccess = event => {
-                        resolve(event.target.result)
-                    };
-                    req.onerror = e => {
-                        reject(req.error);
-                        e.preventDefault()
-                    }
-                })
-            },
-            'storeRemoteEntry': function (store, path, entry) {
-                return new Promise((resolve, reject) => {
-                    var req = store.put(entry, path);
-                    req.onsuccess = () => {
-                        resolve('indexDB save:${path}\n')
-                    };
-                    req.onerror = e => {
-                        reject(req.error);
-                        e.preventDefault()
-                    }
-                })
-            },
-            'removeRemoteEntry': function (store, path) {
-                return new Promise((resolve, reject) => {
-                    var req = store.delete(path);
-                    req.onsuccess = () => {
-                        resolve('indexDB delete:${path}\n')
-                    };
-                    req.onerror = e => {
-                        reject(req.error);
-                        e.preventDefault()
-                    }
-                })
-            },
-            'getRemoteSet': async function (store, callback) {
-                let db = await T.GET_DB(store);
-                return new Promise(resolve => {
-                    var type = "remote",
-                        entries = {},
-                        key = "timestamp",
-                        STORE = T.transaction(store, db);
-                    if (!STORE.indexNames.contains(key)) {
-                        let remote = {
-                            type,
-                            db,
-                            'entries': {}
-                        };
-                        callback && callback(remote);
-                        resolve(remote);
-                        return
-                    }
-                    T.transaction(store, db).index(key).openKeyCursor().onsuccess = evt => {
-                        var cursor = evt.target.result;
-                        if (cursor) {
-                            entries[cursor.primaryKey] = {
-                                "timestamp": cursor.key
-                            };
-                            cursor.continue()
-                        } else {
-                            let remote = {
-                                type,
-                                db,
-                                entries
-                            };
-                            callback && callback(remote);
-                            resolve(remote)
-                        }
-                    }
-                })
-            },
-            'getLocalSet': async function (mount, callback) {
-                return new Promise((resolve, reject) => {
-                    if (!mount) return reject('mount:PATH ERROR');
-                    let FS = Module.FS,
-                        entries = {},
-                        index = 0,
-                        isRealDir = p => p !== "." && p !== "..",
-                        toAbsolute = root => p => this.join2(root, p),
-                        check = FS.readdir(mount.mountpoint).filter(isRealDir).map(toAbsolute(mount.mountpoint));
-                    if (!check) return reject('mount:PATH ERROR');
-                    while (check.length) {
-                        let path = check.pop();
-                        index++;
-                        if (FS.analyzePath(path).exists) {
-                            let stat = FS.stat(path);
-                            if (FS.isDir(stat.mode)) {
-                                check.push.apply(check, FS.readdir(path).filter(isRealDir).map(toAbsolute(path)))
-                            }
-                            entries[path] = {
-                                timestamp: stat.mtime
-                            }
-                        }
-                    }
-                    let result = {
-                        "type": "local",
-                        entries
-                    };
-                    callback && callback(result);
-                    resolve(result)
-                })
-            }
         },
         'MKFILE': (path, data, bool) => {
             let FS = Module.FS,
@@ -1276,10 +977,8 @@
                 });
             }
         },
-        'set_fs_init': (m, n, PATH) => {
-            n.stream_ops.write = m.FileDB.ops_write;
-            if (n.ops_table) n.ops_table.file.stream.write = m.FileDB.ops_write;
-            m.FileDB = Object.assign(PATH, n, m.FileDB);
+        'set_fs_init': (MEMFS,FS,HEAP8) => {
+            Module.FileDB = new T.FsMount({MEMFS,FS,HEAP8});
         },
         'resizeCanvasSize': wh => {
             if (wh) {
@@ -1313,24 +1012,29 @@
         },
         'KeyDown': (key, e) => {
             if (typeof key == 'string') key = [key];
-            key.forEach(entry=>Module.keyCode_enter(Module.keyCode_map['input_' + entry], 1,entry));
+            key.forEach(entry => Module.keyCode_enter(Module.keyCode_map['input_' + entry], 1, entry));
             if (e) return Module.stopEvent(e);
         },
         'KeyUp': (key, e) => {
             if (typeof key == 'string') key = [key];
-            key.forEach(entry=>Module.keyCode_enter(Module.keyCode_map['input_' + entry], 0,entry));
+            key.forEach(entry => Module.keyCode_enter(Module.keyCode_map['input_' + entry], 0, entry));
             if (e) return Module.stopEvent(e);
         },
         'KeyCode_click': key => {
             Module.KeyDown(key);
             setTimeout(() => Module.KeyUp(key), T.speed);
         },
-        'keyCode_enter': (key, type,bkey) => {
-            if (typeof key == "undefined"||key == "" || key == "nul" || key == "null") return;
-            if (Module.myKeyEnter) return Module.myKeyEnter(type,key,bkey);
+        'keyCode_enter': (key, type, bkey) => {
+            if (typeof key == "undefined" || key == "" || key == "nul" || key == "null") return;
+            if (Module.myKeyEnter) return Module.myKeyEnter(type, key, bkey);
             let code = Module.keyCode_list[key];
-            if(typeof code == 'undefined') return;
-            let edata = typeof code == 'string' ? {code,key} : Object.assign(code,{key});
+            if (typeof code == 'undefined') return;
+            let edata = typeof code == 'string' ? {
+                code,
+                key
+            } : Object.assign(code, {
+                key
+            });
             document.dispatchEvent(new KeyboardEvent(type ? 'keydown' : 'keyup', edata));
         },
         'keyCode_map': {
@@ -1351,14 +1055,14 @@
             input_player1_select: "rshift",
             input_player1_start: "enter",
             input_player1_turbo: "nul",
-            input_player1_l_x_minus:"nul",
-            input_player1_l_x_plus:"nul",
-            input_player1_l_y_minus:"nul",
-            input_player1_l_y_plus:"nul",
-            input_player1_r_x_minus:"nul",
-            input_player1_r_x_plus:"nul",
-            input_player1_r_y_minus:"nul",
-            input_player1_r_y_plus:"nul",
+            input_player1_l_x_minus: "nul",
+            input_player1_l_x_plus: "nul",
+            input_player1_l_y_minus: "nul",
+            input_player1_l_y_plus: "nul",
+            input_player1_r_x_minus: "nul",
+            input_player1_r_x_plus: "nul",
+            input_player1_r_y_minus: "nul",
+            input_player1_r_y_plus: "nul",
             input_toggle_fast_forward: "space",
             input_toggle_fullscreen: "f",
             input_reset: "h",
@@ -1367,7 +1071,7 @@
             input_save_state: "f2",
             input_menu_toggle: "f1",
             input_toggle_slowmotion: "nul",
-            input_pause_toggle:"p",
+            input_pause_toggle: "p",
         },
         'keyCode_list': {
             "tilde": "Backquote",
@@ -1713,7 +1417,8 @@
         'RA_isSTOP': 'suspended',
         'RA_REST': RA => {
             RA = RA || Module.RA;
-            if (!RA.context || RA.context.state != Module.RA_isSTOP && RA.context.state != Module.RA_isRUN) {
+            if(RA.context)RA.context.resume();
+            if (!RA.context || RA.context.state != Module.RA_isRUN) {
                 RA.bufIndex = 0;
                 RA.bufOffset = 0
                 var ac = window["AudioContext"] || window["webkitAudioContext"];
@@ -1732,8 +1437,8 @@
                 RA.startTime = 0;
                 RA.context.createGain();
                 RA.setStartTime();
+                RA.context.resume();
             }
-            RA.context.resume();
             Module.resumeMainLoop();
         },
         'RA_RERUN': RA => {
@@ -1743,11 +1448,12 @@
             });
             return 1;
         },
+        RA_ELM : T.$('.g-mobile-click'),
         'RA_CLICK': func => {
-            let elm = T.$('.g-mobile-click');
+            let elm = Module.RA_ELM;
             if (!elm.hidden) return;
             elm.hidden = false;
-            T.once(elm, 'pointerup', () => {
+            T.once(elm, 'pointerdown', () => {
                 elm.hidden = true;
                 func();
             })
@@ -1773,4 +1479,29 @@
         Module.stopGesture(document);
         this.on(window, 'resize', () => Module.resizeCanvasSize());
     });
+    /*
+    var addChrome = T.$('.add-home-app');
+    if (addChrome) {
+
+        var isWebApp = navigator.standalone || false
+        if (!!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform)) {
+            if (!isWebApp) {
+                addChrome.hidden = false;
+            }
+        }
+        T.on(addChrome, 'click', () => {
+            if (addChrome.e) {
+                addChrome.e.prompt();
+            }
+            addChrome.hidden = true;
+        });
+        T.on(window, 'beforeinstallprompt', e => {
+            e.preventDefault();
+            addChrome.e = e;
+            addChrome.hidden = false;
+            T.once(window,'click', () => addChrome.click());
+            e.prompt()
+        });
+    }
+    */
 }).call(Nenge);
