@@ -970,7 +970,7 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
 
         }
         async getItemCursor(store, key, only, dbName) {
-            let DB = await this.DB_select(store, dbName, !0),
+            let F=this,T = F.T,DB = await this.DB_select(store, dbName, !0),
                 len = DB.indexNames.length;
             if (len && !key) {
                 key = DB.indexNames[0];
