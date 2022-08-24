@@ -1,7 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="zh-cn-hans">
-
+<html lang="zh-hans">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -12,7 +11,7 @@
     <meta name="x-content-type-options" content="nosniff" />
     <meta name="renderer" content="webkit">
     <title>RetroArch Web</title>
-    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661169468" />
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661354041" />
 </head>
 
 <body>
@@ -83,6 +82,18 @@
                         <ul>
                             <li>source:github/BinBashBanana/webretro</li>
                             <li>support:gb/gbc/gba</li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>snes9x</span>
+                        <button class="g-btn" data-sys="snes9x" data-mode="BinBashBanana">启动OPEN</button>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/BinBashBanana/webretro</li>
+                            <li>support:snes/sfc</li>
                         </ul>
                     </div>
                 </li>
@@ -183,7 +194,7 @@
                             data-error="失败!">写入bios</button>
                     </h3>
                     <div class="g-game-welcome-result" data-click="game-content-write" data-loadtext="启动"
-                        data-loaddata="写入" data-downtext="下载"></div>
+                        data-loaddata="写入" data-downtext="下载" data-nulltext="写入失败,数据可能不存在."></div>
                 </div>
                 <canvas id="canvas"></canvas>
                 <div class="g-game-ctrl" hidden>
@@ -250,8 +261,8 @@
         </div>
     </div>
     <div class="add-home-app" hidden>添加到主屏幕/应用</div>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?1661169468"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_mount.js?1661169468"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?1661169468"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?1661354041"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_mount.js?1661354041"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?1661354041"></script>
 </body>
 </html>

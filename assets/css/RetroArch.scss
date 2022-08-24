@@ -215,7 +215,7 @@ body {
                 max-width: 100%;
                 margin: auto;
                 padding: 0px 20px;
-                z-index: 10;
+                z-index: 9999;
                 background-color: #fff;
                 overflow: hidden;
                 transition:opacity .5s ease-in-out;
@@ -339,6 +339,7 @@ body {
             opacity: 1;
             transition: top .1s, opacity 0s .3s;
             background-color: #000;
+            overflow: hidden;
             z-index: 1;
 
             .g-mobile-click {
@@ -404,7 +405,7 @@ body {
 
                 >#canvas {
                     width: 100% !important;
-                    height: auto !important;
+                    height: 100% !important;
                     top: 0px;
                     left: 0;
                     right: 0;
@@ -654,7 +655,6 @@ body {
                 @media screen and (orientation: portrait) and (max-width:800px) {
                     >#canvas {
                         position: absolute;
-                        width: 100% !important;
                         height: auto !important;
                     }
                     .g-game-ctrl{
@@ -680,8 +680,6 @@ body {
                 @media screen and (orientation: landscape) and (max-height:800px) {
                     >#canvas {
                         position: absolute;
-                        height: 100% !important;
-                        width: 100% !important;
                     }
 
                     .g-game-ctrl {

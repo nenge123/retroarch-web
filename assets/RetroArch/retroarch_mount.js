@@ -40,7 +40,7 @@
             return result;
         }
         async writeToFS(db) {
-            return Object.entries(await T.GetItems(db)).map(entry => this.storeLocalEntry(entry[0], entry[1])).join('');
+            return Object.entries(await T.GetItems(db,null,true)).map(entry => this.storeLocalEntry(entry[0], entry[1])).join('');
         }
         async syncWrite(storeName, mount) {
             let IsReady = mount.isReady,
@@ -152,7 +152,7 @@
             let remote = {
                 'type': "remote",
                 store,
-                entries: await T.getAllCursor(store, 'timestamp')
+                entries: await T.getAllCursor(store, 'timestamp',null,true)
             };
             callback && callback(remote);
             return remote;
@@ -249,7 +249,7 @@
             return parts
         }
         ops_write = (stream, buffer, offset, length, position, canOwn) => {
-            if (buffer.buffer === this.HEAP8.buffer) {
+            if (this.HEAP8&&buffer.buffer === this.HEAP8.buffer) {
                 canOwn = false
             }
             if (!length) return 0;

@@ -87,6 +87,18 @@
                 </li>
                 <li class="g-cores">
                     <h3 class="g-card-header">
+                        <span>snes9x</span>
+                        <button class="g-btn" data-sys="snes9x" data-mode="BinBashBanana">启动OPEN</button>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/BinBashBanana/webretro</li>
+                            <li>support:snes/sfc</li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
                         <span>mednafen_psx_hw</span>
                         <button class="g-btn" data-sys="mednafen_psx_hw" data-mode="BinBashBanana">启动OPEN</button>
                     </h3>
@@ -182,7 +194,7 @@
                             data-error="失败!">写入bios</button>
                     </h3>
                     <div class="g-game-welcome-result" data-click="game-content-write" data-loadtext="启动"
-                        data-loaddata="写入" data-downtext="下载"></div>
+                        data-loaddata="写入" data-downtext="下载" data-nulltext="写入失败,数据可能不存在."></div>
                 </div>
                 <canvas id="canvas"></canvas>
                 <div class="g-game-ctrl" hidden>

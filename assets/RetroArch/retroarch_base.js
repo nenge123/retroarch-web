@@ -32,6 +32,7 @@
             let result = T.$('.g-game-welcome-result');
             if (!result) return;
             let div = this.runaction('game-welcome-elm', [result]);
+            if(!file&&file!=0)return div.innerHTML =  result.getAttribute('data-nulltext');
             div.innerHTML = T.runaction('span_button_string', [file, {
                 'data-downtext': {
                     'class': "g-btn",
@@ -58,13 +59,13 @@
                 Module.MKFILE(info.file[0], contents);
                 this.runaction('game-welcome-additem', [info.file[0]]);
             } else {
-                let zipdata = await T.unitl.unFile(contents, text => {
+                let zipdata = contents&&await T.unitl.unFile(contents, text => {
                     if (elm) elm.innerHTML = text
                 });
                 if (zipdata instanceof Uint8Array) {
                     Module.MKFILE(info.file[0], zipdata);
                     this.runaction('game-welcome-additem', [info.file[0]]);
-                } else {
+                } else if(zipdata){
                     Object.entries(zipdata).forEach(
                         entry => {
                             Module.MKFILE(entry[0], entry[1]);
@@ -73,6 +74,8 @@
                         }
                     );
                     zipdata = null;
+                }else{
+                    this.runaction('game-welcome-additem', [null]);
                 }
             }
             if (elm) elm.remove();
@@ -385,7 +388,6 @@
             let corefile = await T.FectchItem({
                 'url': sysurl,
                 'unpack': true,
-                'unpack': true,
                 'store': 'data-libjs',
                 'key': 'cores-' + Module.system_fullkey,
                 'version': T.version,
@@ -413,7 +415,7 @@
             window.Module = Module;
             let asmfile = Module.jsFile[sys2 + '_libretro.js'] || Module.jsFile['retroarch.js'];
             if (asmfile) {
-                if (sys2 == 'mednafen_psx_hw') {
+                if (sys2 == 'snes9x'&&sysext=='BinBashBanana') {
                     asmfile = new TextDecoder().decode(await await this.FectchItem({
                         'url': T.JSpath + sys2 + '_libretro.js?' + RAND
                     }));
@@ -937,6 +939,9 @@
                         m.set_fs_init(n,FS||m.FS,HEAP8||m.HEAP8);
                         m.run=run;
                     })(Module,MEMFS);`
+            ).replace(
+                /return\s?WebAssembly\.instantiate\(binary,\s?info\)/,
+                'return WebAssembly.instantiate(binary, info).catch(e=>alert(JSON.stringify(e)))'
             ),
     });
     Object.assign(Module, {
@@ -989,7 +994,10 @@
                 let opt = this.$('.g-game-ui').getBoundingClientRect(),
                     p = Module.canvasQuality || 720,
                     AspectRatio = Module.AspectRatio;
-                if (typeof window.orientation != "undefined" && window.orientation != 0) {
+                if(!T.isMobile){
+                    AspectRatio = opt.width/opt.height;
+                    p = opt.height>p?opt.height:p;
+                }else if (typeof window.orientation != "undefined" && window.orientation != 0) {
                     T.$('.g-game-ctrl').style.top = 45 + 'px';
                     AspectRatio = opt.width / opt.height;
                 } else {
@@ -1505,3 +1513,11 @@
     }
     */
 }).call(Nenge);
+
+window.onerror = function (msg, url, line, col, error) {
+    var extra = !col ? '' : '\ncolumn: ' + col;
+    extra += !error ? '' : '\nerror: ' + error;
+    alert("Error: " + msg + "\nurl: " + url + "\nline: " + line + extra);
+    window.onerror = console.log
+    throw msg;
+};

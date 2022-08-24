@@ -34,5 +34,5 @@
             return e.clientY - rect.top;
         }
     };
-    Module.argumentsInfo = file=>file&&[file,"--verbose"]||["--verbose",'--menu'];
+    Module.set_argument = file=>file&&[file,"--verbose"]||["--verbose",'--menu'];
 }).call(Nenge);

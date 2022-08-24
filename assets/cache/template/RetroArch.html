@@ -11,7 +11,7 @@
     <meta name="x-content-type-options" content="nosniff" />
     <meta name="renderer" content="webkit">
     <title>RetroArch Web</title>
-    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661006591" />
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661353803" />
 </head>
 
 <body>
@@ -20,6 +20,10 @@
             <div class="g-btn-menu" data-click="menu-show">
                 <span class="g-menu-icon"></span>
             </div>
+            <div class="g-btn-sys" data-click="game-cores-sys"></div>
+            <div class="g-btn-hide" data-click="menu-hide" hidden></div>
+            <div class="g-btn-add" data-click="game-content-add" hidden></div>
+            <div class="g-btn-forward" data-click="game-cores-forward" hidden></div>
             <div class="g-menu-list">
                 <div class="g-list" data-click="setting-callback">
                     <div data-setting="showfile">文件管理File</div>
@@ -40,10 +44,6 @@
                     <div data-setting="help">帮助Help</div>
                 </div>
             </div>
-            <div class="g-btn-sys" data-click="game-cores-sys"></div>
-            <div class="g-btn-hide" data-click="menu-hide" hidden></div>
-            <div class="g-btn-add" data-click="game-content-add" hidden></div>
-            <div class="g-btn-forward" data-click="game-cores-forward" hidden></div>
         </div>
     </div>
     <div class="g-main">
@@ -82,6 +82,18 @@
                         <ul>
                             <li>source:github/BinBashBanana/webretro</li>
                             <li>support:gb/gbc/gba</li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="g-cores">
+                    <h3 class="g-card-header">
+                        <span>snes9x</span>
+                        <button class="g-btn" data-sys="snes9x" data-mode="BinBashBanana">启动OPEN</button>
+                    </h3>
+                    <div class="g-card-body">
+                        <ul>
+                            <li>source:github/BinBashBanana/webretro</li>
+                            <li>support:snes/sfc</li>
                         </ul>
                     </div>
                 </li>
@@ -172,7 +184,7 @@
             </ul>
         </div>
         <div class="container g-game-ui no-select" hidden>
-            <span class="g-btn g-mobile-click" hidden>手机需要再次点击启动!</span>
+            <span class="g-btn g-mobile-click" hidden>手机需要再次点击确保音乐正常启动!</span>
             <div class="game-container">
                 <div class="g-game-welcome">
                     <h3>
@@ -182,7 +194,7 @@
                             data-error="失败!">写入bios</button>
                     </h3>
                     <div class="g-game-welcome-result" data-click="game-content-write" data-loadtext="启动"
-                        data-loaddata="写入" data-downtext="下载"></div>
+                        data-loaddata="写入" data-downtext="下载" data-nulltext="写入失败,数据可能不存在."></div>
                 </div>
                 <canvas id="canvas"></canvas>
                 <div class="g-game-ctrl" hidden>
@@ -212,8 +224,8 @@
             <div class="g-game-showtxt" hidden></div>
         </div>
         <div class="container g-file-ui" hidden>
-            <div class="g-file-manager" data-downtext="下载" data-deltext="删除" data-nulltext="空空如也" data-writetext="写入"
-                data-rename="改名" data-edittext="编辑" data-readtext="读取" data-cleartext="清空">
+            <div class="g-file-manager no-select" data-downtext="下载" data-deltext="删除" data-nulltext="空空如也" data-writetext="写入"
+                data-rename="改名" data-edittext="编辑" data-readtext="读取" data-cleartext="清空" data-updirtext="上一层目录">
                 <div class="g-box">
                     <h3 class="g-file-header" data-db="data-info">数据库:data-info/rooms</h3>
                 </div>
@@ -248,7 +260,9 @@
             </div>
         </div>
     </div>
+    <div class="add-home-app" hidden>添加到主屏幕/应用</div>
     <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_mount.js?<?php echo time();?>"></script>
     <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?<?php echo time();?>"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 (async function () {
     let T=this,Module = T.Module,FS = Module.FS;
-    Module.system_name = ['n64'];
-    Module.system_ext = T.action.sysType['n64'];
-    Module.system_bios = this.JSpath+'bios/n64.png';
+    Module.system_name = ['snes'];
+    Module.system_ext = T.action.sysType['snes'];
+    Module.system_bios = this.JSpath+'bios/snes.png';
     Module.canvasX = 0;
     Module.canvasY = 0;
     T.on(Module.canvas,'touchend',e=>{
