@@ -54,7 +54,7 @@ const Nenge = new class {
                     result.contents = new File([result.contents], result.filename || keyName, {
                         type: result.filetype || F.gettype(result.filename || keyName)
                     });
-                } else if (result.type.split('/')[0] == 'String') {
+                } else if (result.type == 'String') {
                     result.contents = new TextDecoder().decode(result.contents);
                 }
             }
