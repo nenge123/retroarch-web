@@ -7,18 +7,7 @@ const Nenge = new class {
         '/userdata': 'userdata',
         '/home/web_user/retroarch/userdata': 'retroarch',
     };
-    Module = {
-        'noInitialRun': true,
-        'arguments': ["-v", "--menu"],
-        'preRun': [],
-        'postRun': [],
-        'print': text => console.log(text),
-        'printErr': text => console.log(text),
-        'totalDependencies': 0,
-        'monitorRunDependencies': function (left) {
-            this.totalDependencies = Math.max(this.totalDependencies, left);
-        }
-    };
+    Encoding = 'GBK';
     version = 2;
     maxsize = 0x6400000;
     part = '-part-';
@@ -32,167 +21,148 @@ const Nenge = new class {
     Err(msg) {
         throw new Error(msg);
     }
-    async getItem(STORE_TABLE, name, version) {
-        if (!name || name instanceof Function) return await this.GetItems(STORE_TABLE, name || cb);
-        let T = this,
-            F = T.unitl,
-            maxsize = T.maxsize,
-            part = T.part;
-        let result = await F.getItem(STORE_TABLE, name);
-        if (result && result.contents && result.filesize && result.filesize > maxsize) {
-            if (version && result.version && result.version != version) {
-                return;
-            }
-            let maxLen = Math.ceil(result.filesize / maxsize),
-                keys = name.split(part),
-                save = [],
-                idx = parseInt(keys[1]) || 0,
-                returnBuf = new Uint8Array(result.filesize);
-            returnBuf.set(result.contents, idx * maxsize);
-            for (let i = 0; i < maxLen; i++) {
-                if ((!keys[1] || keys[1] == '0') && i == 0) continue;
-                else if ((keys[1] == i)) continue;
-                save.push(i > 0 ? keys[0] + part + i : keys[0]);
-            }
-            await Promise.all(save.map(async entry => {
-                let subresult = await F.getItem(STORE_TABLE, entry);
-                if (!subresult) {
-                    throw T.Err(entry + ' data is lost');
-                }
-                let subidx = parseInt(entry.split(part)[1]) || 0;
-                returnBuf.set(subresult.contents, subidx * maxsize);
-            }));
-            if (result.type.split('/')[0] == 'file') {
-                result.contents = new File([returnBuf], keys[0], {
-                    type: result.type.split('/').slice(1).join('/')
-                });
-            } else if (result.type.split('/')[0] == 'sting') {
-                result.contents = new TextDecoder().decode(returnBuf);
-            } else {
-                result.contents = returnBuf;
-            }
-        }
-        return result;
-    }
-    async setItem(STORE_TABLE, name, data, cb) {
+    constructor() {}
+    async getItem(store, name, version, ARG = {}) {
+        if (!name) return await this.getAllData(store, ARG);
         let T = this,
             F = T.unitl,
             maxsize = T.maxsize,
             part = T.part,
-            type = data.type || '';
-        if (data instanceof Promise) data = await data;
-        if ((typeof data == 'string' && data > maxsize / 2) || (typeof data.contents == 'string' && data.contents > maxsize / 2)) {
-            if (data.contents) data.contents = new TextEncoder().encode(data.contents);
-            else data = {
-                'contents': new TextEncoder().encode(data)
-            };
-            Object.assign(data, {
-                'type': 'string'
-            });
-        } else if ((data instanceof Blob && data.size > maxsize) || (data.contents instanceof Blob && data.contents.size > maxsize)) {
-            let filetype = (data.contents || data).type,
-                filesize = (data.contents || data).size;
-            if (data.contents) data.contents = new Uint8Array(await data.contents.arrayBuffer());
-            else data = {
-                'contents': new Uint8Array(await data.arrayBuffer())
-            };
-            Object.assign(data, {
-                'type': filetype ? 'file/' + filetype : type,
-                filesize
-            });
-        }
-        if (data.hasOwnProperty('version') && !data.version) delete data.version;
-        if (data.contents && data.contents.length > maxsize) {
-            let save = {},
-                BufLen = data.contents.byteLength;
-            for (let index = 0; index < Math.ceil(BufLen / maxsize); index++) {
-                save[index > 0 ? name + part + index : name] = maxsize * index;
+            result = await F.DB_ItemGet(Object.assign({store,name}, ARG)),
+            keyName = name.split(part)[0];
+        if (result) {
+            if (version && result.version && result.version != version) {
+                result = undefined;
+            } else if (result.contents && result.filesize && result.filesize > maxsize) {
+                let returnBuf = new Uint8Array(result.filesize);
+                await Promise.all(Array(Math.ceil(result.filesize / maxsize)).fill(keyName).map(async (v, k) => {
+                    let newkey = v;
+                    if (k > 0) newkey += part + k;
+                    if (newkey == name) returnBuf.set(result.contents, k * maxsize);
+                    else {
+                        let subResult = await F.DB_ItemGet(Object.assign(ARG, {store,'name': newkey}));
+                        if (subResult) returnBuf.set(subResult.contents, k * maxsize);
+                        else T.Err('lost file');
+                    }
+                }));
+                result.contents = returnBuf;
             }
+            if (result && result.contents) {
+                if (result.type == 'unpack') {
+                    result.contents = await F.unFile(result.contents, ARG);
+                } else if (result.type == 'File') {
+                    result.contents = new File([result.contents], result.filename || keyName, {
+                        type: result.filetype || F.gettype(result.filename || keyName)
+                    });
+                } else if (result.type.split('/')[0] == 'String') {
+                    result.contents = new TextDecoder().decode(result.contents);
+                }
+            }
+
+        }
+        return result;
+    }
+    async setItem(store, name, data, dbName) {
+        let T = this,
+            F = T.unitl,
+            maxsize = T.maxsize,
+            part = T.part;
+        data = await F.DB_ConvertData(data, maxsize);
+        if (data.contents && data.contents.byteLength > maxsize) {
+            let filesize = data.contents.byteLength;
             let basecontent = {};
             Object.entries(data).forEach(entry => {
                 if (entry[0] != 'contents') basecontent[entry[0]] = entry[1];
             });
-            let result = await Promise.all(
-                Object.entries(save).map(async entry => {
-                    let [key, start] = entry,
-                    end = BufLen - start >= maxsize ? start + maxsize : BufLen;
-                    return await F.setItem(
-                        STORE_TABLE,
-                        Object.assign({}, basecontent, {
-                            'contents': new Uint8Array(data.contents.subarray(start, end)),
-                        }),
-                        key
-                    );
-                })
-            );
-            delete data.contents;
-            data = null;
-            basecontent = null;
-            cb instanceof Function && cb(result);
-            return result;
+            return await Promise.all(Array(Math.ceil(filesize / maxsize)).fill(name).map(async (v, k) => {
+                let key = v,
+                    start = k * maxsize;
+                if (k > 0) key += part + k;
+                return await F.DB_ItemPut({
+                    store,
+                    'data': Object.assign({
+                        'contents': new Uint8Array(data.contents.subarray(start, filesize - start >= maxsize ? start + maxsize : filesize)),
+                    }, basecontent, ),
+                    'name': key,
+                    dbName
+                });
+            }));
         }
-        let result = await F.setItem(STORE_TABLE, data, name);
-        cb instanceof Function && cb(result);
-        return result;
+        return await F.DB_ItemPut({
+            store,
+            data,
+            name,
+            dbName
+        });
     }
-    async removeItem(STORE_TABLE, name, clear) {
+    async removeItem(store, name, ARG) {
+        let {
+            clear,
+            dbName
+        } = ARG || {};
         let T = this,
             F = T.unitl;
         if (clear) {
-            let contents = await F.getItem(STORE_TABLE, name);
+            let contents = await F.DB_ItemGet(Object.assign({
+                store,
+                name
+            }, ARG));
             console.log(contents);
-            if (contents && contents.filesize && contents.filesize > T.maxsize) {
-                let maxLen = Math.ceil(contents.filesize / T.maxsize),
-                    part = T.part,
-                    keys = name.split(part)[0],
-                    result = '';
-                result += await F.removeItem(STORE_TABLE, keys) + '\n';
-                for (let i = 1; i < maxLen; i++) result += await F.removeItem(STORE_TABLE, keys + part + i) + '\n';
-                contents = null;
-                return result;
+            if (contents && contents.filesize) {
+                return await Promise.all(Array(Math.ceil(contents.filesize / T.maxsize)).fill(name.split(part)[0]).map(async (v, k) => {
+                    let key = v;
+                    if (k > 0) key += T.part + k;
+                    return await F.DB_ItemRemove({
+                        store,
+                        'name': key
+                    }) + '\n';
+                }));
 
             }
         }
-        return await F.removeItem(STORE_TABLE, name);
+        return await F.DB_ItemRemove({
+            store,
+            name,
+            dbName
+        });
     }
-    async getContent(STORE_TABLE, name, version) {
-        let result = await this.getItem(STORE_TABLE, name);
-        if (!result) return undefined;
-        if (version && (!result.version || version != result.version)) return undefined;
-        return result.contents || result;
+    async getAllData(store, only, ARG) {
+        return await this.unitl.DB_ItemAll(Object.assign({
+            store,
+            only
+        }, ARG));
     }
-    async getAllKeys(STORE_TABLE, cb, only) {
-        let result = await this.unitl.getItemKey(STORE_TABLE, only);
-        cb instanceof Function && cb(result);
-        return result;
+    async getContent(store, name, version, ARG) {
+        let result = await this.getItem(store, name, version, ARG);
+        return result && result.contents || result;
     }
-    async getAllCursor(STORE_TABLE, key, cb, only) {
-        let T = this,
-            F = T.unitl,
-            result = await F.getItemCursor(STORE_TABLE, key, only);
-        cb instanceof Function && cb(result);
-        return result;
-
+    async getAllKeys(store, dbName) {
+        return await this.unitl.DB_ItemKeys({
+            store,
+            dbName
+        });
     }
-    async GetItems(STORE_TABLE, cb, only) {
-        let result = await this.unitl.getAllItem(STORE_TABLE, only);
-        cb instanceof Function && cb(result);
-        return result;
+    async getAllCursor(store, key, only, ARG) {
+        return await this.unitl.DB_ItemCursor(Object.assign({
+            store,
+            key,
+            only
+        }, ARG));
     }
-    async clearDB(STORE_TABLE, dbName) {
+    async clearDB(tables, dbName) {
         let F = this.unitl;
-        if (!STORE_TABLE) return;
-        let DB = await F.DB_select(STORE_TABLE, dbName);
-        DB.clear();
+        if (!tables) return;
+        if (typeof tables == 'string') tables = [tables];
+        return await F.DB_clear(tables, dbName);
     }
-    async deleteDB(STORE_TABLE, dbName) {
+    async deleteDB(tables, dbName) {
         let F = this.unitl;
-        if (!STORE_TABLE) return F.indexedDB.deleteDatabase(dbName || this.DB_NAME);
-        await F.deleteTable(STORE_TABLE, dbName);
+        if (typeof tables == 'string') tables = [tables];
+        return await F.DB_delete(tables, dbName);
     }
     async FectchItem(ARG) {
-        if (typeof ARG == 'string') ARG = {
-            'url': ARG
+        if (!ARG || typeof ARG == 'string') ARG = {
+            'url': ARG || '/'
         };
         let T = this,
             F = T.unitl,
@@ -201,8 +171,9 @@ const Nenge = new class {
             version = ARG.version,
             headers = {},
             response,
-            packtext = ARG.packtext && ARG.packtext || '解压:',
-            unFile = (buf, p) => F.unFile(buf, (e, n) => ARG.process && ARG.process(packtext + (n ? n + ' ' : '') + e), p || ARG.password),
+            unFile = (buf, password) => F.unFile(buf, Object.assign(ARG, {
+                password
+            })),
             callback = async result => {
                 if (result && result.contents) {
                     if (result.type == 'unpack') result.contents = await unFile(result.contents, result.password)
@@ -213,16 +184,14 @@ const Nenge = new class {
                 return result;
             };
         if (ARG.store && !ARG.unset) {
-            result = await T.getItem(ARG.store, key);
+            result = await T.getItem(ARG.store, key, version, ARG);
             if (result) {
-                if (version && result.version) {
-                    if (version == result.version) return callback(result);
-                } else if (!ARG.checksize) {
+                if (!ARG.checksize) {
                     return callback(result);
                 }
             }
         }
-        response = await F.fetch(ARG);
+        response = await F.FetchStart(ARG);
         headers = F.FetchHeader(response, ARG);
         let password = headers['password'];
         if (response.status == 404) {
@@ -230,16 +199,16 @@ const Nenge = new class {
             return callback(result);
         } else if (result && result.filesize && headers["byteLength"] > 0) {
             if (result.filesize == headers["byteLength"]) return callback(result);
-            if (result.contents) delete result.contents
+            if (result.contents) delete result.contents;
         };
         let contents = await F.FetchStream(response, headers, ARG),
             type = headers.type;
         if (contents.byteLength) {
-            contents = new Uint8Array(contents);
+            contents = new Uint8Array(contents.buffer||contents);
             type = 'Uint8Array';
         }
         let filesize = contents.byteLength || headers["byteLength"] || contents.length || 0;
-        if (ARG.unpack && ARG.store && filesize > T.maxsize) {
+        if (ARG.store && ARG.unpack && ARG.key != F.LibKey && filesize > T.maxsize) {
             type = 'unpack';
             await T.setItem(ARG.store, key, {
                 contents,
@@ -253,48 +222,53 @@ const Nenge = new class {
         }
         if (ARG.unpack && contents instanceof Uint8Array) {
             contents = await unFile(contents, password || ARG.password);
+            if (!contents.byteLength) type = 'datalist';
+            console.log(contents);
+        }
+        if (ARG.store && ARG.key == F.LibKey) {
+            let contents2;
+            if (contents instanceof Uint8Array) {
+                contents = new File([contents], F.getname(ARG.url), {
+                    'type': headers['type']
+                });
+                key = F.LibKey + '-' + F.getname(ARG.url);
+                type = 'File';
+            } else {
+                await Promise.all(Object.entries(contents).map(async entry => {
+                    let [name, data] = entry,
+                    filename = name.split('/').pop(),
+                        filetype = F.gettype(filename),
+                        filedata = new File([data], filename, {
+                            'type': filetype
+                        });
+                    T.Libjs[filename] = filedata;
+                    await T.setItem(
+                        ARG.store,
+                        F.LibKey + '-' + filename, {
+                            'contents': filedata,
+                            'timestamp': T.DATE,
+                            'filesize': data.byteLength,
+                            'version': T.version,
+                            'type': 'File'
+                        }
+                    );
+                    if (ARG.filename == filename) {
+                        contents2 = filedata;
+                    }
+                    return true;
+                }));
+                if (contents2) contents = contents2;
+                delete ARG.store;
+            }
         }
         if (ARG.store) {
-            if (ARG.key == 'libdata') {
-                let contents2;
-                if (contents instanceof Uint8Array) {
-                    contents = new File([contents], F.getname(ARG.url), {
-                        'type': headers['type']
-                    });
-                } else {
-                    await Promise.all(Object.entries(contents).map(async entry => {
-                        let [name, data] = entry,
-                        filename = name.split('/').pop(),
-                            filetype = F.gettype(filename),
-                            filedata = new File([data], filename, {
-                                'type': filetype
-                            });
-                        T.setItem(
-                            ARG.store,
-                            key + '-' + filename, {
-                                'contents': filedata,
-                                'timestamp': T.DATE,
-                                'filesize': data.byteLength,
-                                'version': T.version,
-                                'type': filetype
-                            }
-                        );
-                        if (ARG.filename == filename) {
-                            contents2 = filedata;
-                        }
-                        return true;
-                    }));
-                }
-                if (contents2) contents = contents2;
-            } else {
-                await T.setItem(ARG.store, key, {
-                    contents,
-                    timestamp: new Date,
-                    filesize,
-                    version,
-                    type
-                });
-            }
+            await T.setItem(ARG.store, key, {
+                contents,
+                timestamp: new Date,
+                filesize,
+                version,
+                type
+            });
         }
         ARG.success && ARG.success(contents, headers);
         return contents;
@@ -350,22 +324,6 @@ const Nenge = new class {
                 }
             };
         window.customElements.define(myelement, MyElement);
-    }
-    on(elm, evt, fun, opt, cap) {
-        (elm || document).addEventListener(evt, fun, opt === false ? {
-            passive: false
-        } : opt, cap);
-    }
-    un(elm, evt, fun, opt, cap) {
-        (elm || document).removeEventListener(evt, fun, opt === false ? {
-            passive: false
-        } : opt, cap);
-    }
-    once(elm, evt, fun, opt, cap) {
-        return this.on(elm, evt, fun, {
-            passive: false,
-            once: true
-        }, cap);
     }
     ajax(ARG) {
         return new Promise((resolve, reject) => {
@@ -456,19 +414,6 @@ const Nenge = new class {
             console.log('lost action:' + action);
         }
     }
-    docload(f) {
-        return new Promise(complete => {
-            if (document.readyState == 'loading') {
-                return this.once(document, 'DOMContentLoaded', () => {
-                    f && f.call(this);
-                    complete(true);
-                });
-            }
-            f && f.call(this);
-            complete(true);
-        });
-    }
-    constructor() {}
     async appendscript(js) {
         let url = /^(\/|https?:\/\/|static\/js\/|data\/)/.test(js) ? js : this.JSpath + js;
         let data = await this.FectchItem({
@@ -478,6 +423,9 @@ const Nenge = new class {
             version: this.version
         });
         return await this.addJS(data);
+    }
+    unFile(u8,process,ARG){
+        return this.unitl.unFile(u8,Object.assign({process},ARG))
     }
     unitl = new class {
         async FetchStream(response, headers, ARG) {
@@ -525,32 +473,28 @@ const Nenge = new class {
                 'type': headers['type'] || headers['content-type'].split('/')[0],
             });
         }
-        async fetch(ARG) {
-            if (!ARG.url) throw {
-                url: "url is null"
-            };
-            let url = ARG.url,
-                fd, form, data = {};
-            if (ARG.get) {
-                url += (/\?/.test(url) ? '&' : '?') + new URLSearchParams(ARG.get).toString()
+        async FetchStart(ARG) {
+            let {url,get,post,postdata,form} = ARG||{},fd, data = {};
+            if (get) {
+                url += (/\?/.test(url) ? '&' : '?') + new URLSearchParams(get).toString()
             }
             ['headers', 'context', 'referrer', 'referrerPolicy', 'mode', 'credentials', 'redirect', 'integrity', 'cache'].forEach(val => {
                 if (ARG[val] != undefined) data[val] = ARG[val];
             });
-            if (ARG.form || ARG.post) {
-                if (typeof ARG.form == 'string') fd = new FormData(this.T.$(ARG.form));
-                else if (ARG.form instanceof HTMLElement) {
-                    fd = new FormData(ARG.form);
+            if (form || post) {
+                if (typeof form == 'string') fd = new FormData(this.T.$(form));
+                else if (form instanceof HTMLElement) {
+                    fd = new FormData(form);
                 } else if (form instanceof FormData) {
                     fd = form;
                 } else {
                     fd = new FormData();
                 }
-                if (ARG.post) {
-                    Object.entries(ARG.post).forEach(entry => fd.append(entry[0], entry[1]));
+                if (post) {
+                    Object.entries(post).forEach(entry => fd.append(entry[0], entry[1]));
                 }
-            } else if (ARG.postdata) {
-                fd = ARG.postdata;
+            } else if (postdata) {
+                fd = postdata;
             }
             if (fd) {
                 data.method = 'POST';
@@ -560,18 +504,24 @@ const Nenge = new class {
                 throw e
             });
         }
-        async unRAR(u8, cb, password, key, file) {
-            let worker = new Worker(this.URL(await this.getLibjs(file || 'rar.js')));
+        async unRAR(u8, ARG) {
+            let {
+                process,
+                password,
+                packsrc
+            } = ARG;
+            let worker = new Worker(this.URL(await this.getLibjs(packsrc || 'rar.js')));
             return new Promise(complete => {
                 let contents = {};
                 worker.onmessage = result => {
-                        if (1 === result.data.t) {
+                        let data = result.data;
+                        if (1 === data.t) {
                             complete(contents);
                             result.target['terminate']();
-                        } else if (2 === result.data.t) {
-                            contents[result.data.file] = result.data.data;
-                        } else if (4 === result.data.t && result.data.total > 0 && result.data.total >= result.data.current) {
-                            cb && cb(Math.floor(Number(result.data.current) / Number(result.data.total) * 100) + '%', result.data.name);
+                        } else if (2 === data.t) {
+                            contents[data.file] = data.data;
+                        } else if (4 === data.t && data.total > 0 && data.total >= data.current) {
+                            process && process(ARG.packtext + ' ' + (data.name || '') + ' ' + Math.floor(Number(data.current) / Number(data.total) * 100) + '%', data.total,data.current);
                         }
                     },
                     worker.postMessage(!file ? {
@@ -581,63 +531,88 @@ const Nenge = new class {
             });
 
         }
-        async un7z(u8, cb, password, key) {
-            return this.unRAR(u8, cb, null, key, '7z.js');
+        async un7z(u8, ARG) {
+            ARG.packsrc = '7z.js';
+            return this.unRAR(u8, ARG);
         }
-        async unZip(u8, cb, password, key) {
-            let T = this.T;
-            await this.ZipInitJS();
-            /*
-            
-zipFs = new zip.fs.FS();
-await zipFs.importBlob(zippedBlob);
-const firstEntry = zipFs.children[0];
-const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
-             */
+        async unZip(u8, ARG={}) {
+            let {
+                process,
+                password,
+                packtext
+            } = ARG,F=this,T = F.T;
+            await F.ZipInitJS();
             let zipReader = new zip.ZipReader(u8 instanceof Blob ? new zip.BlobReader(u8) : new zip.Uint8ArrayReader(u8));
             let entries = await zipReader.getEntries({
-                filenameEncoding: 'GBK',
+                filenameEncoding: T.Encoding,
             });
             if (entries.length > 0) {
                 let contents = {};
                 await Promise.all(
                     entries.map(
                         async entry => {
-                            if (!entry.directory) contents[entry.filename] = await this.ZipReadEntry(entry, this.ZipPassword || password, cb);
+                            if (entry.directory)return;
+                            let opt = {
+                                'onprogress':(a,b)=>process&&process(packtext+entry.filename+':'+Math.ceil(a*100/b)+'%')
+                            };
+                            if(!entry.encrypted){
+                                contents[entry.filename] =  await entry.getData(new zip.Uint8ArrayWriter(),opt);
+                            }else{
+                                contents[entry.filename] = await F.ZipData(entry,opt,password);
+                            }
                             return true;
                         }
                     )
                 );
-                if (key) {
-                    Object.assign(T.Libjs, contents);
-                }
                 zipReader.close();
-                return key ? T.Libjs[key] : contents;
+                delete F.ZipPassword;
+                return contents;
             } else {
                 return u8;
             }
-        }
-        async ZipReadEntry(entry, password, cb) {
-            let onprogress = (index, max) => cb(entry.filename + ' &gt;&gt; ' + Math.ceil(index / max * 100) + '%');
-            if (!entry.encrypted) return await entry.getData(new zip.Uint8ArrayWriter(), {
-                onprogress
-            });
-            else {
-                try {
-                    return await entry.getData(new zip.Uint8ArrayWriter(), {
-                        password,
-                        onprogress
-                    });
-                } catch (e) {
-                    if (e.message == 'File contains encrypted entry') {
-                        let newpassword = window.prompt('need a read password');
-                        if (newpassword) {
-                            this.ZipPassword = newpassword;
-                            return this.ZipReadEntry(entry, newpassword);
-                        }
-                    }
-                    throw 'miss password';
+            /*
+            let zipFs = new zip.fs.FS(),contents={};
+            await zipFs[u8 instanceof Blob ?'importBlob':'importUint8Array'](u8,{'filenameEncoding':T.Encoding});
+            await Promise.all(
+                zipFs.entries.map(async entry=>{
+                let data = entry.data;
+                if(!data ||data.directory)return ;
+                let opt = {
+                    'onprogress':(a,b)=>process&&process(packtext+entry.name+':'+Math.ceil(a*100/b)+'%')
+                };
+                if(!data.encrypted){
+                    contents[data.filename] = await entry.getUint8Array(opt);
+                }else{
+                    contents[data.filename] = await F.ZipData(entry,opt,password);
                 }
+                return true;
+            })) ;
+            delete F.ZipPassword;
+            return contents;
+            */
+        }
+        ZipWait(){
+            if(this.ZipPassword==undefined) return;
+            return new Promise(complete=>{
+                let Time = setInterval(()=>{
+                    if(this.ZipPassword!=''){
+                        clearInterval(Time);
+                        complete(true);
+                    }
+                },this.speed);
+            })
+        }
+        async ZipData(entry,opt,password){
+            let F = this;
+            try{
+                return await await entry.getData(new zip.Uint8ArrayWriter(),Object.assign(opt,{'password':F.ZipPassword||password}));
+            }catch(e){
+                await F.ZipWait();
+                if(!this.ZipPassword || F.ZipPassword==password)this.ZipPassword = '';
+                if(!F.ZipPassword){
+                    F.ZipPassword = window.prompt('need a read password',F.ZipPassword||'');
+                }
+                return await F.ZipData(entry, opt,F.ZipPassword);
             }
         }
         async ZipCreate(password) {
@@ -647,7 +622,8 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
             });
         }
         async ZipInitJS() {
-            if (!window.zip) await this.T.addJS(await this.getLibjs('zip.min.js'));
+            let F = this,T=F.T;
+            if (!window.zip) await T.addJS(await F.getLibjs(F.Libzip));
             return true;
         }
         async ZipAddFile(files, password, ZipWriter, options, comment) {
@@ -656,7 +632,10 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
             else await Promise.all(Array.from(files).map(async file => await ZipWriter.add(file.name, new zip.BlobReader(file), options)));
             return await ZipWriter.close(comment);
         }
-        async unFile(u8, cb, password, key) {
+        async unFile(u8, ARG={}) {
+            if(typeof ARG=='string')ARG.unMode = {'unMode':ARG};
+            ARG.packtext = ARG.packtext || '解压:';
+            if (ARG.unMode && this[ARG.unMode]) return await this[ARG.unMode](u8, ARG);
             let action = null,
                 u8Mime;
             if (u8 instanceof Blob) {
@@ -671,7 +650,7 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
                     else if (/rar/.test(mime)) action = 'unRAR';
                     else if (/7z/.test(mime)) action = 'un7z';
                 }
-                if (!action || action == 'stream') {
+                if (!action) {
                     u8 = new Uint8Array(await u8.arrayBuffer());
                     u8Mime = this.checkBuffer(u8);
                 }
@@ -686,7 +665,7 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
                 else if (u8Mime == 'rar') action = 'unRAR';
                 else if (u8Mime == '7z') action = 'un7z';
             }
-            if (action && this[action]) return await this[action](u8, cb, password, key);
+            if (action && this[action]) return await this[action](u8, ARG);
             return u8;
         }
         get random() {
@@ -728,19 +707,21 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
             'application/x-rar-compressed': ['rar'],
             'application/x-7z-compressed': ['7z']
         };
-        checkBuffer(u8) {
+        checkBuffer(u8, defalut) {
             let head = Array.from(u8.slice(0, 8)).map(v => v.toString(16).padStart(2, 0).toLocaleUpperCase()).join('');
             for (let ext in this.mime_preg) {
                 if (this.mime_preg[ext].test(head)) return ext;
             }
-            return 'unkonw';
+            return defalut || 'unkonw';
         }
         URL(u8, type) {
-            if (!type) {
-                if (u8 instanceof Blob && u8.type) type = u8.type;
-                else if (!/(\\|\/)/.test(type)) type = this.gettype(type);
+            let F = this;
+            if (u8 instanceof Uint8Array) {
+                if (!type) type = F.gettype(F.checkBuffer(u8));
+            } else if (typeof u8 == 'string') {
+                if (/^(blob|http)/.test(u8) || /^\/?[\w\-_\u4e00-\u9FA5:\/\.\?\^\+ =%&@#~]+$/.test(u8)) return u8;
+                if (!type) type = F.gettype('js');
             }
-            if (typeof u8 == 'string' && /^(blob|http|\/\w+)/.test(u8)) return u8;
             return window.URL.createObjectURL(u8 instanceof Blob ? u8 : new Blob([u8], {
                 'type': type
             }));
@@ -762,13 +743,19 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
             a.click();
             a.remove();
         }
-        indexedDB = window.indexedDB || window.webkitindexedDB;
         DB_STORE = {};
         get DB() {
             return this.DB_STORE[this.T.DB_NAME];
         }
-        getDB_MAP(STORE_TABLE, STORE_INDEX, STORE_NAME) {
-            let F = this,
+        get DB_idb() {
+            return window.indexedDB || window.webkitindexedDB;
+        }
+        DB_GETMAP(ARG) {
+            let {
+                store,
+                dbName,
+                dbIndex
+            } = ARG || {}, F = this,
                 T = F.T;
             if (!F.DB_MAP) {
                 F.DB_MAP = Object.assign({}, T.DB_MAP_LIST || {});
@@ -782,160 +769,223 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
                     });
                 }
             }
-            if (STORE_NAME) {
-                !F.DB_MAP[STORE_NAME] && (F.DB_MAP[STORE_NAME] = {});
-                if (STORE_TABLE) {
-                    !F.DB_MAP[STORE_NAME][STORE_TABLE] && (F.DB_MAP[STORE_NAME][STORE_TABLE] = {});
-                    if (STORE_INDEX) {
-                        if (typeof STORE_INDEX == 'string') F.DB_MAP[STORE_NAME][STORE_TABLE][STORE_INDEX] = false;
-                        else Object.assign(F.DB_MAP[STORE_NAME][STORE_TABLE], STORE_INDEX);
+            if (dbName) {
+                !F.DB_MAP[dbName] && (F.DB_MAP[dbName] = {});
+                if (store) {
+                    !F.DB_MAP[dbName][store] && (F.DB_MAP[dbName][store] = {});
+                    if (dbIndex) {
+                        if (typeof dbIndex == 'string') F.DB_MAP[dbName][store][dbIndex] = false;
+                        else Object.assign(F.DB_MAP[dbName][store], dbIndex);
                     }
                 }
             }
             return F.DB_MAP;
 
         }
-        async DB_load(STORE_TABLE, STORE_NAME, STORE_INDEX) {
-            let F = this,
+        async DB_LOAD(ARG={}) {
+            let store = ARG.store, F = this,
                 T = F.T,
-                DB_MAP = F.getDB_MAP(STORE_TABLE, STORE_INDEX, STORE_NAME),
-                Name = STORE_NAME || T.DB_NAME,
-                DBDatabase = F.DB_STORE[Name];
-            if (DBDatabase && DBDatabase.objectStoreNames.contains(STORE_TABLE)) {
-                return DBDatabase;
+                DB_Name = ARG.dbName || T.DB_NAME,
+                DB = F.DB_STORE[DB_Name];
+            if (DB && (!store || F.DB_checkTable(store,DB))) {
+                return DB;
             }
+            await F.DB_INSTALL(F.DB_GETMAP(Object.assign(ARG||{},{'dbName':DB_Name})));
+            return F.DB_STORE[DB_Name];
+        }
+        async DB_INSTALL(DB_MAP){
+            let F = this;
             console.log('install indexDB');
             await Promise.all(Object.entries(DB_MAP).map(async dbmap => {
-                let storeName = dbmap[0],
-                    DB = F.DB_STORE[storeName],
-                    TABLE = dbmap[1],
-                    version;
+                let [mapName,dbTable] = dbmap,
+                    DB = F.DB_STORE[mapName],
+                    dbVer;
                 if (DB) {
-                    let list = DB.objectStoreNames;
-                    for (var table in TABLE) {
-                        if (!list.contains(table)) {
-                            version = DB.version + 1;
-                        }
-                    }
-                    if (!version) return 'ok';
+                    let notTable = Object.entries(dbTable).filter(v => !F.DB_checkTable(v[0],DB));
+                    if(!notTable.length) return 'ok';
+                    dbVer = DB.version + 1;
                     DB.close();
                 }
-                return await F.DB_install(storeName, {
-                    version,
-                    TABLE
-                });
+                return await F.DB_OPEN(Object.assign({
+                    'dbName':mapName,
+                    'dbTable': dbTable,
+                    dbVer
+                }));
             }));
-            return F.DB_STORE[Name];
         }
-        async DB_install(STORE_NAME, ARG) {
-            ARG = ARG || {};
-            if (typeof ARG == 'string') ARG = {
-                store: ARG
-            };
-            let F = this,
+        async DB_OPEN(ARG) {
+            if(!ARG)return ;
+            let {
+                dbName,
+                dbVer,
+                dbTable
+            } = ARG,
+                F = this,
                 T = F.T,
-                mb = ARG.db || F.DB_STORE[STORE_NAME];
-            if (ARG.version) {
-                mb && mb.close();
-            } else if (mb) {
-                return mb;
+                DB = ARG.DB || F.DB_STORE[dbName];
+            if (dbVer) {
+                DB && DB.close();
+            } else if (DB) {
+                return DB;
             }
             return new Promise((resolve, reject) => {
-                let req = F.indexedDB.open(STORE_NAME, ARG.version);
+                let req = F.DB_idb.open(dbName, dbVer);
                 req.addEventListener('error', async err => {
                     console.log(err, req.error);
                     reject(err);
                 });
                 req.addEventListener('upgradeneeded', async e => {
-                    let DB = req.result,
-                        Names = DB.objectStoreNames;
-                    if (ARG.upgrad) {
-                        await ARG.upgrad.apply(req, [DB, Names]);
-                    } else if (ARG.TABLE) {
-                        await F.DB_creatTable(ARG.TABLE, DB,Names);
+                    let DB = req.result;
+                    if (ARG.dbUpgrad) {
+                        await ARG.dbUpgrad.apply(req, [DB]);
+                    } else {
+                        await F.DB_CreateTable(Object.assign(ARG, {DB}));
                     }
                 });
                 req.addEventListener('versionchange', e => {
                     console.log(11);
                 });
                 req.addEventListener('success', async e => {
-                    let DB = req.result,
-                        Names = DB.objectStoreNames;
-                    if (ARG.success) {
-                        ARG.success.apply(req, [DB,Names]);
-                    } else if (!ARG.once && ARG.TABLE) {
-                        ARG.version = DB.version + 1;
-                        ARG.db = DB;
-                        ARG.once = true;
-                        for (let table in ARG.TABLE) {
-                            if (!Names.contains(table)) return F.DB_install(STORE_NAME, ARG).then(db => resolve(db));
+                    let DB = req.result;
+                    if (!dbVer&&dbTable) {
+                        let notTable = Object.entries(dbTable).filter(v => !F.DB_checkTable(v[0],DB));
+                        if (notTable.length) {
+                            dbVer = DB.version + 1;
+                            DB = await F.DB_OPEN(Object.assign(ARG, {dbVer,DB}));
+
                         }
                     }
-                    F.DB_STORE[STORE_NAME] = DB;
+                    F.DB_STORE[dbName] = DB;
                     resolve(DB);
                 });
             });
         }
-        async DB_creatTable(TABLE, DB, list) {
-            list = list || DB.objectStoreNames;
+        async DB_CreateTable(ARG) {
+            let {dbTable,DB} = ARG || {};
+            if(!dbTable||!DB) return;
             let F = this;
             await Promise.all(
-                Object.entries(TABLE).map(
-                    async table => {
-                        let DBObjectStore,keylist = Object.entries(table[1]);
-                        if (!list.contains(table[0])) {
-                            DBObjectStore = await DB.createObjectStore(table[0]);
-                            keylist.length && F.DB_creatIndex(keylist, DBObjectStore);
+                Object.entries(dbTable).map(
+                    async tableData => {
+                        let options, [keyTable,keyData] = tableData;
+                        if (keyData.options) {
+                            options = keyData.options;
+                            delete keyData.options;
+                        }
+                        let DBObjectStore, keylist = Object.entries(keyData);
+                        if (!F.DB_checkTable(keyTable,DB)) {
+                            DBObjectStore = await DB.createObjectStore(keyTable, options);
+                            F.DB_CreateIndex(keylist, DBObjectStore);
                         }
                     }
                 )
             );
         }
-        DB_creatIndex = (keylist, DBObjectStore) =>keylist.forEach(
-                indexKey => {
-                    DBObjectStore.indexNames.contains(indexKey[0]) && DBObjectStore.createIndex(indexKey[0], indexKey[0], indexKey[1]||{"unique":false});
+        DB_CreateIndex(keylist, DBObjectStore) {
+            keylist.forEach(
+                key_map => {
+                    let [key, opt] = key_map;
+                    !DBObjectStore.indexNames.contains(key) && DBObjectStore.createIndex(key, key, opt && opt.unique ? opt : {
+                        "unique": false
+                    });
                 }
             );
-        async DB_select(STORE_TABLE, DB_NAME, ReadMode, DB_INDEX) {
-            let F = this,
-                DBDatabase = F.DB_STORE[DB_NAME] || F.DB;
-            if (!DBDatabase || !DBDatabase.objectStoreNames.contains(STORE_TABLE)) DBDatabase = await F.DB_load(STORE_TABLE, DB_NAME, DB_INDEX);
+        }
+        DB_checkTable(list,DB,len){
+            if(typeof list == 'string')list = [list];
+            list = list?list.filter(v=>DB.objectStoreNames.contains(v)):[];
+            if(len)return list;
+            return list.length;
+        }
+        async DB_ConvertData(data, maxsize) {
+            if (data instanceof Promise) data = await data;
+            let contents = data.contents || data,
+                result = {};
+            if (typeof contents == 'string' && contents.length > maxsize) {
+                contents = new TextEncoder().encode(contents);
+                Object.assign(result, {
+                    contents,
+                    filesize: contents.byteLength,
+                    'type': 'String',
+
+                });
+            } else if (contents instanceof Blob && contents.size > maxsize) {
+                Object.assign(result, {
+                    'contents': new Uint8Array(await contents.arrayBuffer()),
+                    'filetype': contents.type,
+                    'filesize': contents.size,
+                    'filename': contents.name,
+                    'type': 'File'
+                });
+            } else if (contents.byteLength && contents.byteLength > maxsize) {
+                if(contents.__proto__.constructor != Uint8Array) contents = new Uint8Array(contents.buffer||contents);
+                Object.assign(result, {
+                    contents,
+                    'filesize': contents.byteLength,
+                    'type': 'Uint8Array'
+                });
+            }
+            if (result.contents) {
+                if (!data.type && !result.type) result.type = 'Uint8Array';
+                if (data.contents) {
+                    delete data.contents;
+                    Object.assign(data, result);
+                } else {
+                    data = result;
+                }
+            }
+            if (data.contents)['version', 'password'].forEach(val => !data[val] && (delete data[val]));
+            return data;
+        }
+        async DB_SELECT(ARG, ReadMode) {
+            let F = this,T=F.T;
+            if(typeof ARG == 'string')ARG = {'store':ARG};
+            ARG = Object.assign({'dbName':T.DB_NAME},ARG);
+            let {store,dbName} = ARG,DB = F.DB_STORE[dbName] || F.DB;
+            if (!DB || !F.DB_checkTable(store,DB) ) DB = await F.DB_LOAD(ARG);
             ReadMode = ReadMode ? "readonly" : "readwrite";
-            let DBTransaction = DBDatabase.transaction([STORE_TABLE], ReadMode);
+            if(!store)store = DB.objectStoreNames[0];
+            else if(!F.DB_checkTable(store,DB))return T.Err('store is null');
+            let DBTransaction = DB.transaction([store], ReadMode);
             DBTransaction.onerror = e => {
                 e.preventDefault();
                 throw DBTransaction.error;
             };
-            return DBTransaction.objectStore(STORE_TABLE);
+            return DBTransaction.objectStore(store);
         }
-        async getItem(store, name, dbName) {
-            let DB = await this.DB_select(store, dbName, !0);
-            return new Promise(resolve => {
+        async DB_ItemGet(ARG) {
+            if(typeof ARG == 'string')ARG = {'name':ARG};
+            let name = ARG.name, DB = await this.DB_SELECT(ARG, !0);
+            if(name)return new Promise(resolve => {
                 DB.get(name).onsuccess = e => resolve(e.target.result);
             });
         }
-        async setItem(store, data, name, dbName) {
-            let DB = await this.DB_select(store, dbName);
+        async DB_ItemPut(ARG) {
+            let {
+                data,
+                name
+            } = ARG || {}, DB = await this.DB_SELECT(ARG);
             return new Promise(resolve => {
                 DB.put(data, name).onsuccess = e => resolve(e.target.result);
             });
         }
-        async removeItem(store, name, dbName) {
-            let DB = await this.DB_select(store, dbName);
-            return new Promise((resolve, reject) => {
+        async DB_ItemRemove(ARG) {
+            if(typeof ARG == 'string')ARG = {'name':ARG};
+            let name = ARG.name, DB = await this.DB_SELECT(ARG);
+            if(name)return new Promise((resolve, reject) => {
                 DB.delete(name).onsuccess = e => resolve(`delete:${name}`);
             });
         }
-        async getAllItem(store, only, dbName) {
+        async DB_ItemAll(ARG) {
             let F = this,
                 T = F.T,
-                DB = await F.DB_select(store, dbName, !0);
+                DB = await F.DB_SELECT(ARG, !0);
             return new Promise(callback => {
                 let entries = {};
                 DB.openCursor().onsuccess = evt => {
                     let cursor = evt.target.result;
                     if (cursor) {
-                        if (only === true && cursor.value.contents instanceof Uint8Array && cursor.value.filesize > T.maxsize) {
+                        if (ARG.only === true && T.part && T.maxsize && cursor.value.contents instanceof Uint8Array && cursor.value.filesize > T.maxsize) {
                             let skey = cursor.primaryKey.split(T.part),
                                 newkey = skey[0],
                                 index = skey[1] || 0;
@@ -959,33 +1009,35 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
                 }
             });
         }
-        async getItemKey(store, dbName) {
-            let DB = await this.DB_select(store, dbName, !0);
+        async DB_ItemKeys(ARG) {
+            if(typeof ARG == 'string')ARG = {'dbName':ARG};
+            let DB = await this.DB_SELECT(ARG, !0);
             return new Promise(resolve => {
-                this.DB_select(store, dbName, !0)
                 DB.getAllKeys().onsuccess = e => {
                     resolve(e.target.result)
                 };
             });
 
         }
-        async getItemCursor(store, key, only, dbName) {
-            let F=this,T = F.T,DB = await this.DB_select(store, dbName, !0),
+        async DB_ItemCursor(ARG) {
+            if(typeof ARG == 'string')ARG = {'key':ARG};
+            let key = ARG.key, F = this,
+                T = F.T,
+                DB = await F.DB_SELECT(ARG, !0),
                 len = DB.indexNames.length;
             if (len && !key) {
                 key = DB.indexNames[0];
             } else if (!len) {
-                return this.getItemKey(store, dbName);
+                return F.DB_ItemKeys(ARG);
             }
             return new Promise(resolve => {
                 let entries = {};
                 DB.index(key).openKeyCursor().onsuccess = evt => {
                     let cursor = evt.target.result;
                     if (cursor) {
-                        if (only !== true || !cursor.primaryKey.includes(T.part)) {
-                            entries[cursor.primaryKey] = {
-                                "timestamp": cursor.key
-                            };
+                        if (ARG.only !== true || T.part && !cursor.primaryKey.includes(T.part)) {
+                            entries[cursor.primaryKey] = {};
+                            entries[cursor.primaryKey][key] = cursor.key;
                         }
                         cursor.continue()
                     } else {
@@ -995,16 +1047,32 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
             })
 
         }
-        async deleteTable(STORE_TABLE, dbName) {
+        async DB_clear(tables, dbName) {
+            if(typeof tables == 'string')tables = [tables];
+            return await Promise.all(tables.map(async store => {
+                let DB = await F.DB_SELECT({
+                    store,
+                    dbName
+                });
+                DB.clear();
+            }));
+        }
+        DB_REMOVE(dbName) {
+            return this.DB_idb.deleteDatabase(dbName || this.T.DB_NAME);
+        }
+        async DB_delete(tables, dbName) {
+            if (!tables) return this.DB_REMOVE(dbName);
             let F = this,
-                DB = await F.DB_load(STORE_TABLE, dbName),
-                version = DB.version + 1,
-                name = DB.name;
+                DB = await F.DB_LOAD({dbName}),
+                dbVer = DB.version + 1,
+                list = F.DB_checkTable(tables,DB,!0);
+            if (!list.length) return 'nothing delete';
             DB.close();
-            return await F.DB_install(name, {
-                version,
-                upgrad: DB => {
-                    DB.deleteObjectStore(STORE_TABLE);
+            return await F.DB_OPEN({
+                dbName: DB.name,
+                dbVer,
+                dbUpgrad: DB => {
+                    list.forEach(val => DB.deleteObjectStore(val));
                 }
             });
 
@@ -1012,33 +1080,35 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
         Libjs = {};
         LibPack = 'libjs.png';
         LibStore = 'data-libjs';
+        LibKey = 'libjs';
+        Libzip = 'zip.min.js';
         async getLibjs(file) {
             let F = this,
                 T = F.T;
             if (F.Libjs[file]) return F.Libjs[file];
-            let contents = await T.getContent('data-libjs', 'libdata-' + file, T.version);
+            let contents = await T.getContent('data-libjs', F.LibKey + '-' + file, T.version);
             if (!contents) {
-                let zip = 'zip.min.js',
+                let zip = F.Libzip,
                     path = T.JSpath;
                 F.Libjs[zip] = path + zip + '?' + F.random;
                 if (file != zip) {
-                    contents = await T.FectchItem({
+                    await T.FectchItem({
                         url: path + F.LibPack,
                         'store': 'data-libjs',
-                        'key': 'libdata',
+                        'key': F.LibKey,
                         'unpack': true,
                         'filename': file
                     });
                 }
             }
-            if (contents) {
+            if (F.Libjs[file] instanceof File) {
                 if (file == 'rar.js') {
                     let memurl = F.URL(await F.getLibjs('rar.mem'));
                     let rarurl = F.URL(contents);
                     contents = `var dataToPass=[],password;self.Module={locateFile:()=>'` + memurl + `',monitorRunDependencies:function(t){0==t&&setTimeout((function(){unrar(dataToPass,password||null)}),100)},onRuntimeInitialized:function(){}};
                 importScripts('` + rarurl + `');let unrar=function(t,e){let n=readRARContent(t.map((function(t){return{name:t.name,content:new Uint8Array(t.content)}})),e,(function(t,e,n){postMessage({t:4,current:n,total:e,name:t})})),o=function(t){if("file"===t.type)postMessage({t:2,file:t.fullFileName,size:t.fileSize,data:t.fileContent});else{if("dir"!==t.type)throw"Unknown type";Object.keys(t.ls).forEach((function(e){o(t.ls[e])}))}};return o(n),postMessage({t:1}),n};onmessage=function(t){dataToPass.push({name:"test.rar",content:t.data.data});if(!password&&t.data.password)password=t.data.password;};`;
                     F.Libjs[file] = new File([contents], file, {
-                        'type': F.gettype(file),
+                        'type': F.gettype('js'),
                         'x-content-type-options': 'nosniff'
                     });
                 } else {
@@ -1055,4 +1125,32 @@ const unzippedBlob = await firstEntry.getBlob(zip.getMimeType(firstEntry.name));
             });
         }
     }(this);
+    on(elm, evt, fun, opt, cap) {
+        (elm || document).addEventListener(evt, fun, opt === false ? {
+            passive: false
+        } : opt, cap);
+    }
+    un(elm, evt, fun, opt, cap) {
+        (elm || document).removeEventListener(evt, fun, opt === false ? {
+            passive: false
+        } : opt, cap);
+    }
+    once(elm, evt, fun, opt, cap) {
+        return this.on(elm, evt, fun, {
+            passive: false,
+            once: true
+        }, cap);
+    }
+    docload(f) {
+        return new Promise(complete => {
+            if (document.readyState == 'loading') {
+                return this.once(document, 'DOMContentLoaded', () => {
+                    f && f.call(this);
+                    complete(true);
+                });
+            }
+            f && f.call(this);
+            complete(true);
+        });
+    }
 };

@@ -40,7 +40,7 @@
             return result;
         }
         async writeToFS(db) {
-            return Object.entries(await T.GetItems(db,null,true)).map(entry => this.storeLocalEntry(entry[0], entry[1])).join('');
+            return Object.entries(await T.getAllData(db,true)).map(entry => this.storeLocalEntry(entry[0], entry[1])).join('');
         }
         async syncWrite(storeName, mount) {
             let IsReady = mount.isReady,
@@ -152,7 +152,7 @@
             let remote = {
                 'type': "remote",
                 store,
-                entries: await T.getAllCursor(store, 'timestamp',null,true)
+                entries: await T.getAllCursor(store, 'timestamp',true)
             };
             callback && callback(remote);
             return remote;
@@ -311,6 +311,30 @@
             if (stream.path && stream.fd != null && !this.update_path.includes(stream.path)) {
                 this.update_path.push(stream.path)
                 this.update_promise(stream).then(result => this.update_mount());
+            }
+        }
+        MKFILE(path, data, bool){
+            let FS = this.FS,
+                dir = path.split('/');
+            if (dir.length) dir = dir.slice(0, -1).join('/');
+            else dir = '/';
+            if (!FS.analyzePath(dir).exists) {
+                let pdir = dir.split('/').slice(0, -1).join('/');
+                if (!FS.analyzePath(pdir).exists) FS.createPath('/', pdir, !0, !0);
+                FS.createPath('/', dir, !0, !0);
+            }
+            if (typeof data == 'string') data = new TextEncoder().encode(data);
+            if (bool) {
+                if (FS.analyzePath(path).exists) FS.unlink(path);
+                FS.writeFile(path, data, {
+                    canOwn: true,
+                    encoding: "binary"
+                });
+            } else if (!FS.analyzePath(path).exists) {
+                FS.writeFile(path, data, {
+                    canOwn: true,
+                    encoding: "binary"
+                });
             }
         }
     }

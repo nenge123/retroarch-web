@@ -1,7 +1,7 @@
 (async function () {
     let T=this,Module = T.Module,FS = Module.FS;
     Module.system_name = ['n64'];
-    Module.system_ext = T.action.sysType['n64'];
+    Module.system_ext = Module.sys_map['n64'];
     Module.system_bios = this.JSpath+'bios/n64.png';
     Module.canvasX = 0;
     Module.canvasY = 0;

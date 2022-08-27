@@ -24,7 +24,7 @@ key2: 6ccd78a4401ae6c9fda8e770ddbf7608
             'hash_key':'2',
             'hash_key2':'6ccd78a4401ae6c9fda8e770ddbf7608'+'32d57c66d2f3ea56d2af90bef14773f0',
             'system_name': ['psx'],
-            'system_ext': T.action.sysType['psx'],
+            'system_ext': Module.sys_map['psx'],
             'system_bios': this.JSpath + 'bios/psx.png',
             'system_uipath': '/bundle/',
             'set_argument': file => {

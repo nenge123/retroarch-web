@@ -1,7 +1,7 @@
 (async function () {
     let T=this,Module = T.Module,FS = Module.FS;
     Module.system_name = ['psx'];
-    Module.system_ext = T.action.sysType['psx'];
+    Module.system_ext = Module.sys_map['psx'];
     Module.system_ext.push('ccd');
     Module.system_bios = this.JSpath+'bios/psx.png';
     Module.canvasX = 0;
