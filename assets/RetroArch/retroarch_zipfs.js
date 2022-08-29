@@ -7,8 +7,14 @@
             T.$('.test-result').innerHTML ='zip-fs is save and load!';
         }]);
     };
-    this.action['reset-cores'] = async ()=>{
+    this.action['reset-data'] = async ()=>{
         let result = await Promise.all(['myzipfs',"cores-vba_next_libretro","cores-mgba_libretro"].map(async key=>await T.removeItem('data-libjs',key)));
+        console.log(result);
+        T.$('.test-result').innerHTML = result.join('<br>');
+        //location.reload();
+    };
+    this.action['reset-cores'] = async ()=>{
+        let result = await Promise.all(["cores-vba_next_libretro","cores-mgba_libretro"].map(async key=>await T.removeItem('data-libjs',key)));
         console.log(result);
         T.$('.test-result').innerHTML = result.join('<br>');
         //location.reload();
