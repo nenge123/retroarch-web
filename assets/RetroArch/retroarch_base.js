@@ -884,12 +884,12 @@
         });
     }
     */
-}).call(Nenge);
-
-window.onerror = function (msg, url, line, col, error) {
-    var extra = !col ? '' : '\ncolumn: ' + col;
+T.on(window,'error',function (e) {
+    console.log(e);
+    let {message, filename, lineno, colno, error} = e;
+    var extra = !colno ? '' : '\ncolumn: ' + colno;
     extra += !error ? '' : '\nerror: ' + error;
-    alert("Error: " + msg + "\nurl: " + url + "\nline: " + line + extra);
-    window.onerror = console.log
-    throw msg;
-};
+    alert("Error: " + message + "\nurl: " + filename + "\nline: " + lineno + extra);
+    throw message;
+});
+}).call(Nenge);
