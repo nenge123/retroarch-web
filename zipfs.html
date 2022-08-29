@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="us-en">
 <head>
@@ -10,7 +11,7 @@
     <meta name="x-content-type-options" content="nosniff" />
     <meta name="renderer" content="webkit">
     <title>RetroArch Web</title>
-    <link rel="stylesheet" href="RetroArch.scss" />
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661739380" />
 </head>
 
 <body>
@@ -52,7 +53,7 @@
             <button data-click="reset-cores">reset the cores data in indexdb</button><hr>
             <div class="test-result" style="color:red;">waiting ....</div><hr>
 
-            <ul class="g-start-list" data-click="game-cores-install">
+            <ul class="g-start-list" data-click="game-cores-install" hidden>
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>Vba-next</span>
@@ -85,6 +86,7 @@
                 <div class="g-game-welcome">
                     <h3>
                         <span>请选择装载内容</span>
+                        <button class="g-btn" data-click="reset-reload">reload </button>   
                         <button class="g-btn" data-click="menu-reload">test</button>
                         <button class="g-btn g-right g-blue2" data-click="game-content-bios" data-sussces="完成!"
                             data-error="失败!">写入bios</button>
@@ -157,10 +159,10 @@
         </div>
     </div>
     <div class="add-home-app" hidden>添加到主屏幕/应用</div>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?<?php echo time();?>"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_Module.js?<?php echo time();?>"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_mount.js?<?php echo time();?>"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?<?php echo time();?>"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_zipfs.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?1661739380"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_Module.js?1661739380"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_mount.js?1661739380"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_base2.js?1661739380"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_zipfs.js?1661739380"></script>
 </body>
 </html>
