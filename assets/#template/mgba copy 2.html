@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="assets/icon/icon.png">
     <link rel="icon" href="assets/icon/icon.png" type="image/png" />
     <title>MGBA Web Emulator by Retroarch</title>
-    <link rel="stylesheet" href="/xiunoII/assets/cache/style/scss_mgba.css?1659863504" />
+    <link rel="stylesheet" href="mgba.scss" />
 </head>
 <body>
     <div class="game-container">
@@ -59,13 +59,34 @@
         </div>
         <div class="game-msg" hidden></div>
     </div>
-    <script src="assets/mgba/mgba.js?<?php echo time();?>"></script>
+    <script src="assets/mgba/mgba.js?<?=time()?>"></script>
     <script>
+        /**
+         * 37 
+         * 40 即时存档
+         * 41 即时读档
+         * 42 摄像头
+         * 43 退出
+         * 44 存档位置 增加
+         * 45 存档位置 减少
+         * 47 录制??
+         * 48 暂停/继续
+         * 49 暂停
+         * 71 [INFO] Game focus is: : on./off
+         * simulate = Module.cwrap('simulate_input', 'null', ['number', 'number', 'number']);c = p=>{simulate(0,p,1); setTimeout(()=>simulate(0,p,0),1000/60);};func = (i)=>{if(i>50)return;console.log(i);c(i);setTimeout(()=>func(i+1),500);};FS =Module.FS;
+         * 
+         * Module.FS.filesystems.IDBFS.getLocalSet({mountpoint:'/home/'},(c,d)=>console.log(d.entries))
+         * Module.cwrap('set_variable', 'null', ['string', 'string'])('mgba_sgb_borders','OFF')
+         * Module.cwrap('get_core_options', 'string', [])()
+         */
+        
         let func = async ()=>{
-            Module.wasmBinary =  new Uint8Array(await (await fetch('assets/mgba/mgba_libretro.wasm')).arrayBuffer());
-            let js = new TextDecoder().decode(new Uint8Array(await (await fetch('assets/mgba/mgba_libretro.js?'+Math.random())).arrayBuffer()));
+            Module.wasmBinary =  new Uint8Array(await (await fetch('assets/mgba/retroarch.wasm')).arrayBuffer());
+            let js = new TextDecoder().decode(new Uint8Array(await (await fetch('assets/mgba/retroarch.js?'+Math.random())).arrayBuffer()));
             js = js.replace(/\"mouse(up|down|move)\"/g,'"pointer$1"');
             await Module.addJS(js);
+            EmulatorJS(Module);
+            let FS = Module.FS;
                     let CreateDataFile = (path, data, bool)=>{
         let dir = path.split('/').slice(0, -1).join('/');
         if (!FS.analyzePath(dir).exists){
@@ -86,9 +107,7 @@
             FS.createPath('/', `${base}/userdata`, !0, !0);
             FS.createPath('/', `${base}/bundle`, !0, !0);
             FS.createPath('/', `${base}/userdata/config/mGBA`, !0, !0);
-            if (!FS.analyzePath(`${base}/userdata/config/mGBA/mGBA.opt`).exists) {
-                FS.createDataFile(`${base}/userdata/config/mGBA`, `mGBA.opt`, `mgba_sgb_borders = "OFF"`, !0, !0);
-            }
+            CreateDataFile(`/etc/mGBA/1.cfg`, `mgba_sgb_borders = "OFF"`);
                 let cfg = 'menu_mouse_enable = "true"\n' +
                     'menu_pointer_enable = "true"\n' +
                     `menu_driver = "glui"\n` +
@@ -173,6 +192,7 @@
                         //'key':'assets.zip',
                         //'store':'data-libjs'
                     });
+                    /*
                     Object.entries(assets).forEach(val=>{
                         let path = `${base}/bundle/${val[0]}`;
                         CreateDataFile(path, val[1]);
@@ -183,17 +203,14 @@
                         }
                         delete assets[val[0]];
                     });
-            CreateDataFile("1.gba",new Uint8Array(await (await fetch('assets/mgba/3.gba')).arrayBuffer()));
+                    */
+            CreateDataFile("1.gba",new Uint8Array(await (await fetch('assets/mgba/2.gb')).arrayBuffer()));
                     let sstime = setInterval(()=>{
                         if(!FS.ignorePermissions){
                             clearInterval(sstime);
                             Module.once(document.body,'pointerup',()=>{
-                                Module.callMain(['-v','1.gba']);
-                            
-                                let w = Math.min(window.innerWidth,document.documentElement.clientWidth),
-               h = Math.min(window.innerHeight,document.documentElement.clientHeight),
-               tmph = w/(1.5);
-               Module.setCanvasSize(w,h);
+                                Module.specialHTMLTargets && (Module.specialHTMLTargets['#canvas'] = Module.canvas);
+                                Module.callMain(['-v','1.gba','2b35cacf70aef5cbb3f38c0bb20e488cc8ad0c350400499a0']);
             });
                         }
                     },1000/60)

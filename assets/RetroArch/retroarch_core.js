@@ -15,12 +15,6 @@ const Nenge = new class {
     DATE = new Date();
     JSpath = document.currentScript && document.currentScript.src.split('/').slice(0, -1).join('/') + '/';
     isMobile = 'ontouchend' in document;
-    $ = (e, f) => e instanceof Function ? this.docload(e) : (f || document).querySelector(e);
-    $$ = (e, f) => (f || document).querySelectorAll(e);
-    $ce = e => document.createElement(e);
-    Err(msg) {
-        throw new Error(msg);
-    }
     constructor() {}
     async getItem(store, name, version, ARG = {}) {
         if (!name) return await this.getAllData(store, ARG);
@@ -28,7 +22,10 @@ const Nenge = new class {
             F = T.unitl,
             maxsize = T.maxsize,
             part = T.part,
-            result = await F.DB_ItemGet(Object.assign({store,name}, ARG)),
+            result = await F.DB_ItemGet(Object.assign({
+                store,
+                name
+            }, ARG)),
             keyName = name.split(part)[0];
         if (result) {
             if (version && result.version && result.version != version) {
@@ -40,7 +37,10 @@ const Nenge = new class {
                     if (k > 0) newkey += part + k;
                     if (newkey == name) returnBuf.set(result.contents, k * maxsize);
                     else {
-                        let subResult = await F.DB_ItemGet(Object.assign(ARG, {store,'name': newkey}));
+                        let subResult = await F.DB_ItemGet(Object.assign(ARG, {
+                            store,
+                            'name': newkey
+                        }));
                         if (subResult) returnBuf.set(subResult.contents, k * maxsize);
                         else T.Err('lost file');
                     }
@@ -160,7 +160,7 @@ const Nenge = new class {
         if (typeof tables == 'string') tables = [tables];
         return await F.DB_delete(tables, dbName);
     }
-    async FectchItem(ARG) {
+    async FetchItem(ARG) {
         if (!ARG || typeof ARG == 'string') ARG = {
             'url': ARG || '/'
         };
@@ -204,7 +204,7 @@ const Nenge = new class {
         let contents = await F.FetchStream(response, headers, ARG),
             type = headers.type;
         if (contents.byteLength) {
-            contents = new Uint8Array(contents.buffer||contents);
+            contents = new Uint8Array(contents.buffer || contents);
             type = 'Uint8Array';
         }
         let filesize = contents.byteLength || headers["byteLength"] || contents.length || 0;
@@ -416,7 +416,7 @@ const Nenge = new class {
     }
     async appendscript(js) {
         let url = /^(\/|https?:\/\/|static\/js\/|data\/)/.test(js) ? js : this.JSpath + js;
-        let data = await this.FectchItem({
+        let data = await this.FetchItem({
             url,
             store: 'data-libjs',
             key: 'script-' + js.split('/').pop(),
@@ -424,8 +424,10 @@ const Nenge = new class {
         });
         return await this.addJS(data);
     }
-    unFile(u8,process,ARG){
-        return this.unitl.unFile(u8,Object.assign({process},ARG))
+    unFile(u8, process, ARG) {
+        return this.unitl.unFile(u8, Object.assign({
+            process
+        }, ARG))
     }
     unitl = new class {
         async FetchStream(response, headers, ARG) {
@@ -474,7 +476,13 @@ const Nenge = new class {
             });
         }
         async FetchStart(ARG) {
-            let {url,get,post,postdata,form} = ARG||{},fd, data = {};
+            let {
+                url,
+                get,
+                post,
+                postdata,
+                form
+            } = ARG || {}, fd, data = {};
             if (get) {
                 url += (/\?/.test(url) ? '&' : '?') + new URLSearchParams(get).toString()
             }
@@ -521,7 +529,7 @@ const Nenge = new class {
                         } else if (2 === data.t) {
                             contents[data.file] = data.data;
                         } else if (4 === data.t && data.total > 0 && data.total >= data.current) {
-                            process && process(ARG.packtext + ' ' + (data.name || '') + ' ' + Math.floor(Number(data.current) / Number(data.total) * 100) + '%', data.total,data.current);
+                            process && process(ARG.packtext + ' ' + (data.name || '') + ' ' + Math.floor(Number(data.current) / Number(data.total) * 100) + '%', data.total, data.current);
                         }
                     },
                     worker.postMessage(!file ? {
@@ -535,12 +543,12 @@ const Nenge = new class {
             ARG.packsrc = '7z.js';
             return this.unRAR(u8, ARG);
         }
-        async unZip(u8, ARG={}) {
+        async unZip(u8, ARG = {}) {
             let {
                 process,
                 password,
                 packtext
-            } = ARG,F=this,T = F.T;
+            } = ARG, F = this, T = F.T;
             await F.ZipInitJS();
             let zipReader = new zip.ZipReader(u8 instanceof Blob ? new zip.BlobReader(u8) : new zip.Uint8ArrayReader(u8));
             let entries = await zipReader.getEntries({
@@ -551,14 +559,14 @@ const Nenge = new class {
                 await Promise.all(
                     entries.map(
                         async entry => {
-                            if (entry.directory)return;
+                            if (entry.directory) return;
                             let opt = {
-                                'onprogress':(a,b)=>process&&process(packtext+entry.filename+':'+Math.ceil(a*100/b)+'%')
+                                'onprogress': (a, b) => process && process(packtext + entry.filename + ':' + Math.ceil(a * 100 / b) + '%')
                             };
-                            if(!entry.encrypted){
-                                contents[entry.filename] =  await entry.getData(new zip.Uint8ArrayWriter(),opt);
-                            }else{
-                                contents[entry.filename] = await F.ZipData(entry,opt,password);
+                            if (!entry.encrypted) {
+                                contents[entry.filename] = await entry.getData(new zip.Uint8ArrayWriter(), opt);
+                            } else {
+                                contents[entry.filename] = await F.ZipData(entry, opt, password);
                             }
                             return true;
                         }
@@ -571,6 +579,12 @@ const Nenge = new class {
                 return u8;
             }
             /*
+            let {
+                process,
+                password,
+                packtext
+            } = ARG,F=this,T = F.T;
+            await F.ZipInitJS();
             let zipFs = new zip.fs.FS(),contents={};
             await zipFs[u8 instanceof Blob ?'importBlob':'importUint8Array'](u8,{'filenameEncoding':T.Encoding});
             await Promise.all(
@@ -591,28 +605,36 @@ const Nenge = new class {
             return contents;
             */
         }
-        ZipWait(){
-            if(this.ZipPassword==undefined) return;
-            return new Promise(complete=>{
-                let Time = setInterval(()=>{
-                    if(this.ZipPassword!=''){
+        ZipWait() {
+            if (this.ZipPassword == undefined) return;
+            return new Promise(complete => {
+                let Time = setInterval(() => {
+                    if (this.ZipPassword != '') {
                         clearInterval(Time);
                         complete(true);
                     }
-                },this.speed);
+                }, this.speed);
             })
         }
-        async ZipData(entry,opt,password){
+        async ZipData(entry, opt, password) {
             let F = this;
-            try{
-                return await await entry.getData(new zip.Uint8ArrayWriter(),Object.assign(opt,{'password':F.ZipPassword||password}));
-            }catch(e){
-                await F.ZipWait();
-                if(!this.ZipPassword || F.ZipPassword==password)this.ZipPassword = '';
-                if(!F.ZipPassword){
-                    F.ZipPassword = window.prompt('need a read password',F.ZipPassword||'');
+            try {
+                return await entry.getData(new zip.Uint8ArrayWriter(), Object.assign(opt, {
+                    'password': F.ZipPassword || password
+                }));
+            } catch (e) {
+                if (['File contains encrypted entry', 'Invalid password'].includes(e.message)) {
+                    console.log(e.message);
+                    await F.ZipWait();
+                    if (!this.ZipPassword || F.ZipPassword == password) this.ZipPassword = '';
+                    if (!F.ZipPassword) {
+                        F.ZipPassword = window.prompt('need a read password', F.ZipPassword || '');
+                    }
+                    return await F.ZipData(entry, opt, F.ZipPassword || undefined);
+
+                } else {
+                    F.T.Err(e);
                 }
-                return await F.ZipData(entry, opt,F.ZipPassword);
             }
         }
         async ZipCreate(password) {
@@ -622,7 +644,8 @@ const Nenge = new class {
             });
         }
         async ZipInitJS() {
-            let F = this,T=F.T;
+            let F = this,
+                T = F.T;
             if (!window.zip) await T.addJS(await F.getLibjs(F.Libzip));
             return true;
         }
@@ -632,8 +655,10 @@ const Nenge = new class {
             else await Promise.all(Array.from(files).map(async file => await ZipWriter.add(file.name, new zip.BlobReader(file), options)));
             return await ZipWriter.close(comment);
         }
-        async unFile(u8, ARG={}) {
-            if(typeof ARG=='string')ARG.unMode = {'unMode':ARG};
+        async unFile(u8, ARG = {}) {
+            if (typeof ARG == 'string') ARG.unMode = {
+                'unMode': ARG
+            };
             ARG.packtext = ARG.packtext || '解压:';
             if (ARG.unMode && this[ARG.unMode]) return await this[ARG.unMode](u8, ARG);
             let action = null,
@@ -682,9 +707,6 @@ const Nenge = new class {
             }
             return this.mime_list[type] || 'application/octet-stream';
         }
-        istext(type) {
-            return this.gettype(type).includes('text');
-        }
         mime_preg = {
             "7z": /^377ABCAF271C/,
             "rar": /^52617221/,
@@ -709,8 +731,9 @@ const Nenge = new class {
         };
         checkBuffer(u8, defalut) {
             let head = Array.from(u8.slice(0, 8)).map(v => v.toString(16).padStart(2, 0).toLocaleUpperCase()).join('');
-            for (let ext in this.mime_preg) {
-                if (this.mime_preg[ext].test(head)) return ext;
+            if (head) {
+                let result = Object.entries(this.mime_preg).filter(entry => entry[1].test(head))[0];
+                if (result) return result[0];
             }
             return defalut || 'unkonw';
         }
@@ -782,45 +805,48 @@ const Nenge = new class {
             return F.DB_MAP;
 
         }
-        async DB_LOAD(ARG={}) {
-            let store = ARG.store, F = this,
+        async DB_LOAD(ARG = {}) {
+            let store = ARG.store,
+                F = this,
                 T = F.T,
                 DB_Name = ARG.dbName || T.DB_NAME,
                 DB = F.DB_STORE[DB_Name];
-            if (DB && (!store || F.DB_checkTable(store,DB))) {
+            if (DB && (!store || F.DB_checkTable(store, DB))) {
                 return DB;
             }
-            await F.DB_INSTALL(F.DB_GETMAP(Object.assign(ARG||{},{'dbName':DB_Name})));
+            await F.DB_INSTALL(F.DB_GETMAP(Object.assign(ARG || {}, {
+                'dbName': DB_Name
+            })));
             return F.DB_STORE[DB_Name];
         }
-        async DB_INSTALL(DB_MAP){
+        async DB_INSTALL(DB_MAP) {
             let F = this;
             console.log('install indexDB');
             await Promise.all(Object.entries(DB_MAP).map(async dbmap => {
-                let [mapName,dbTable] = dbmap,
-                    DB = F.DB_STORE[mapName],
+                let [mapName, dbTable] = dbmap,
+                DB = F.DB_STORE[mapName],
                     dbVer;
                 if (DB) {
-                    let notTable = Object.entries(dbTable).filter(v => !F.DB_checkTable(v[0],DB));
-                    if(!notTable.length) return 'ok';
+                    let notTable = Object.entries(dbTable).filter(v => !F.DB_checkTable(v[0], DB));
+                    if (!notTable.length) return 'ok';
                     dbVer = DB.version + 1;
                     DB.close();
                 }
                 return await F.DB_OPEN(Object.assign({
-                    'dbName':mapName,
+                    'dbName': mapName,
                     'dbTable': dbTable,
                     dbVer
                 }));
             }));
         }
         async DB_OPEN(ARG) {
-            if(!ARG)return ;
+            if (!ARG) return;
             let {
                 dbName,
                 dbVer,
                 dbTable
             } = ARG,
-                F = this,
+            F = this,
                 T = F.T,
                 DB = ARG.DB || F.DB_STORE[dbName];
             if (dbVer) {
@@ -839,7 +865,9 @@ const Nenge = new class {
                     if (ARG.dbUpgrad) {
                         await ARG.dbUpgrad.apply(req, [DB]);
                     } else {
-                        await F.DB_CreateTable(Object.assign(ARG, {DB}));
+                        await F.DB_CreateTable(Object.assign(ARG, {
+                            DB
+                        }));
                     }
                 });
                 req.addEventListener('versionchange', e => {
@@ -847,11 +875,14 @@ const Nenge = new class {
                 });
                 req.addEventListener('success', async e => {
                     let DB = req.result;
-                    if (!dbVer&&dbTable) {
-                        let notTable = Object.entries(dbTable).filter(v => !F.DB_checkTable(v[0],DB));
+                    if (!dbVer && dbTable) {
+                        let notTable = Object.entries(dbTable).filter(v => !F.DB_checkTable(v[0], DB));
                         if (notTable.length) {
                             dbVer = DB.version + 1;
-                            DB = await F.DB_OPEN(Object.assign(ARG, {dbVer,DB}));
+                            DB = await F.DB_OPEN(Object.assign(ARG, {
+                                dbVer,
+                                DB
+                            }));
 
                         }
                     }
@@ -861,19 +892,22 @@ const Nenge = new class {
             });
         }
         async DB_CreateTable(ARG) {
-            let {dbTable,DB} = ARG || {};
-            if(!dbTable||!DB) return;
+            let {
+                dbTable,
+                DB
+            } = ARG || {};
+            if (!dbTable || !DB) return;
             let F = this;
             await Promise.all(
                 Object.entries(dbTable).map(
                     async tableData => {
-                        let options, [keyTable,keyData] = tableData;
+                        let options, [keyTable, keyData] = tableData;
                         if (keyData.options) {
                             options = keyData.options;
                             delete keyData.options;
                         }
                         let DBObjectStore, keylist = Object.entries(keyData);
-                        if (!F.DB_checkTable(keyTable,DB)) {
+                        if (!F.DB_checkTable(keyTable, DB)) {
                             DBObjectStore = await DB.createObjectStore(keyTable, options);
                             F.DB_CreateIndex(keylist, DBObjectStore);
                         }
@@ -891,10 +925,10 @@ const Nenge = new class {
                 }
             );
         }
-        DB_checkTable(list,DB,len){
-            if(typeof list == 'string')list = [list];
-            list = list?list.filter(v=>DB.objectStoreNames.contains(v)):[];
-            if(len)return list;
+        DB_checkTable(list, DB, len) {
+            if (typeof list == 'string') list = [list];
+            list = list ? list.filter(v => DB.objectStoreNames.contains(v)) : [];
+            if (len) return list;
             return list.length;
         }
         async DB_ConvertData(data, maxsize) {
@@ -918,7 +952,7 @@ const Nenge = new class {
                     'type': 'File'
                 });
             } else if (contents.byteLength && contents.byteLength > maxsize) {
-                if(contents.__proto__.constructor != Uint8Array) contents = new Uint8Array(contents.buffer||contents);
+                if (contents.__proto__.constructor != Uint8Array) contents = new Uint8Array(contents.buffer || contents);
                 Object.assign(result, {
                     contents,
                     'filesize': contents.byteLength,
@@ -938,14 +972,22 @@ const Nenge = new class {
             return data;
         }
         async DB_SELECT(ARG, ReadMode) {
-            let F = this,T=F.T;
-            if(typeof ARG == 'string')ARG = {'store':ARG};
-            ARG = Object.assign({'dbName':T.DB_NAME},ARG);
-            let {store,dbName} = ARG,DB = F.DB_STORE[dbName] || F.DB;
-            if (!DB || !F.DB_checkTable(store,DB) ) DB = await F.DB_LOAD(ARG);
+            let F = this,
+                T = F.T;
+            if (typeof ARG == 'string') ARG = {
+                'store': ARG
+            };
+            ARG = Object.assign({
+                'dbName': T.DB_NAME
+            }, ARG);
+            let {
+                store,
+                dbName
+            } = ARG, DB = F.DB_STORE[dbName] || F.DB;
+            if (!DB || !F.DB_checkTable(store, DB)) DB = await F.DB_LOAD(ARG);
             ReadMode = ReadMode ? "readonly" : "readwrite";
-            if(!store)store = DB.objectStoreNames[0];
-            else if(!F.DB_checkTable(store,DB))return T.Err('store is null');
+            if (!store) store = DB.objectStoreNames[0];
+            else if (!F.DB_checkTable(store, DB)) return T.Err('store is null');
             let DBTransaction = DB.transaction([store], ReadMode);
             DBTransaction.onerror = e => {
                 e.preventDefault();
@@ -954,9 +996,12 @@ const Nenge = new class {
             return DBTransaction.objectStore(store);
         }
         async DB_ItemGet(ARG) {
-            if(typeof ARG == 'string')ARG = {'name':ARG};
-            let name = ARG.name, DB = await this.DB_SELECT(ARG, !0);
-            if(name)return new Promise(resolve => {
+            if (typeof ARG == 'string') ARG = {
+                'name': ARG
+            };
+            let name = ARG.name,
+                DB = await this.DB_SELECT(ARG, !0);
+            if (name) return new Promise(resolve => {
                 DB.get(name).onsuccess = e => resolve(e.target.result);
             });
         }
@@ -970,9 +1015,12 @@ const Nenge = new class {
             });
         }
         async DB_ItemRemove(ARG) {
-            if(typeof ARG == 'string')ARG = {'name':ARG};
-            let name = ARG.name, DB = await this.DB_SELECT(ARG);
-            if(name)return new Promise((resolve, reject) => {
+            if (typeof ARG == 'string') ARG = {
+                'name': ARG
+            };
+            let name = ARG.name,
+                DB = await this.DB_SELECT(ARG);
+            if (name) return new Promise((resolve, reject) => {
                 DB.delete(name).onsuccess = e => resolve(`delete:${name}`);
             });
         }
@@ -1010,7 +1058,9 @@ const Nenge = new class {
             });
         }
         async DB_ItemKeys(ARG) {
-            if(typeof ARG == 'string')ARG = {'dbName':ARG};
+            if (typeof ARG == 'string') ARG = {
+                'dbName': ARG
+            };
             let DB = await this.DB_SELECT(ARG, !0);
             return new Promise(resolve => {
                 DB.getAllKeys().onsuccess = e => {
@@ -1020,8 +1070,11 @@ const Nenge = new class {
 
         }
         async DB_ItemCursor(ARG) {
-            if(typeof ARG == 'string')ARG = {'key':ARG};
-            let key = ARG.key, F = this,
+            if (typeof ARG == 'string') ARG = {
+                'key': ARG
+            };
+            let key = ARG.key,
+                F = this,
                 T = F.T,
                 DB = await F.DB_SELECT(ARG, !0),
                 len = DB.indexNames.length;
@@ -1048,7 +1101,7 @@ const Nenge = new class {
 
         }
         async DB_clear(tables, dbName) {
-            if(typeof tables == 'string')tables = [tables];
+            if (typeof tables == 'string') tables = [tables];
             return await Promise.all(tables.map(async store => {
                 let DB = await F.DB_SELECT({
                     store,
@@ -1063,9 +1116,11 @@ const Nenge = new class {
         async DB_delete(tables, dbName) {
             if (!tables) return this.DB_REMOVE(dbName);
             let F = this,
-                DB = await F.DB_LOAD({dbName}),
+                DB = await F.DB_LOAD({
+                    dbName
+                }),
                 dbVer = DB.version + 1,
-                list = F.DB_checkTable(tables,DB,!0);
+                list = F.DB_checkTable(tables, DB, !0);
             if (!list.length) return 'nothing delete';
             DB.close();
             return await F.DB_OPEN({
@@ -1092,7 +1147,7 @@ const Nenge = new class {
                     path = T.JSpath;
                 F.Libjs[zip] = path + zip + '?' + F.random;
                 if (file != zip) {
-                    await T.FectchItem({
+                    await T.FetchItem({
                         url: path + F.LibPack,
                         'store': 'data-libjs',
                         'key': F.LibKey,
@@ -1135,7 +1190,7 @@ const Nenge = new class {
             passive: false
         } : opt, cap);
     }
-    once(elm, evt, fun, opt, cap) {
+    once(elm, evt, fun, cap) {
         return this.on(elm, evt, fun, {
             passive: false,
             once: true
@@ -1152,5 +1207,84 @@ const Nenge = new class {
             f && f.call(this);
             complete(true);
         });
+    }
+    $ = (e, f) => e instanceof Function ? this.docload(e) : e instanceof Element ? e : (f || document).querySelector(e);
+    $$ = (e, f) => (f || document).querySelectorAll(e);
+    $ce = e => document.createElement(e);
+    $attr = {
+        'active': {
+            get: function () {
+                return this.classList.contains('active')
+            },
+            set: function (bool) {
+                return this.classList[bool ? 'add' : 'remove']('active')
+            }
+        },
+        'Attr': {
+            get: function () {
+                return this.getAttr()
+            },
+            set: function (attr) {
+                return this.setAttr(attr)
+            }
+        },
+        'getAttr': function (name) {
+            let elm = this;
+            if (name) return elm.getAttribute(name);
+            return Object.fromEntries(Array.from(elm.attributes || []).map(attr => [attr.name, attr.value]));
+        },
+        'setAttr': function (attr, value) {
+            let elm = this;
+            if (typeof attr == 'string') return value == undefined ? elm.removeAttribute(attr) : elm.setAttribute(attr, value);
+            return Object.entries(attr).forEach(entry => elm.setAttribute(entry[0], entry[1]));
+        },
+        '$': function (e) {
+            return T.$(e, this);
+        },
+        '$$': function (e) {
+            return T.$$(e, this);
+        },
+        'on': function (evt, func, opt) {
+            if (!this.eventList) this.eventList = [{
+                evt,
+                func,
+                opt
+            }];
+            else this.eventList.push({
+                evt,
+                func,
+                opt
+            });
+            return T.on(this, evt, func, opt);
+        },
+        'un': function (evtname) {
+            this.eventList && this.eventList.forEach(value => {
+                let {
+                    evt,
+                    func,
+                    opt
+                } = value;
+                if (!evtname) T.un(evt, func, opt);
+                else if (evtname == evt) T.un(evt, func, opt);
+            })
+        },
+        'once': function (evt, func, cap) {
+            return T.once(this, evt, func, cap);
+        }
+    };
+    $elm(e, f) {
+        let T = this,
+            elm = T.$(e, f);
+        if (!elm) T.Error(e);
+        else if (!elm.Attr) Object.entries(T.$attr).forEach(entry => {
+            let [k, value] = entry;
+            Object.defineProperty(elm, k, !value.get? {
+                value
+            } : value)
+        });
+        return elm;
+    };
+    Err(msg) {
+        throw new Error(msg);
     }
 };

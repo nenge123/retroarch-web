@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="assets/icon/icon.png">
     <link rel="icon" href="assets/icon/icon.png" type="image/png" />
     <title>MGBA Web Emulator by Retroarch</title>
-    <link rel="stylesheet" href="/xiunoII/assets/cache/style/scss_mgba.css?1659863504" />
+    <link rel="stylesheet" href="mgba.scss" />
 </head>
 <body>
     <div class="game-container">
@@ -59,11 +59,11 @@
         </div>
         <div class="game-msg" hidden></div>
     </div>
-    <script src="assets/mgba/mgba.js?<?php echo time();?>"></script>
+    <script src="assets/mgba/mgba.js?<?=time()?>"></script>
     <script>
         let func = async ()=>{
-            Module.wasmBinary =  new Uint8Array(await (await fetch('assets/mgba/mgba_libretro.wasm')).arrayBuffer());
-            let js = new TextDecoder().decode(new Uint8Array(await (await fetch('assets/mgba/mgba_libretro.js?'+Math.random())).arrayBuffer()));
+            Module.wasmBinary =  new Uint8Array(await (await fetch('assets/mgba/vba_next_libretro.wasm')).arrayBuffer());
+            let js = new TextDecoder().decode(new Uint8Array(await (await fetch('assets/mgba/vba_next_libretro.js?'+Math.random())).arrayBuffer()));
             js = js.replace(/\"mouse(up|down|move)\"/g,'"pointer$1"');
             await Module.addJS(js);
                     let CreateDataFile = (path, data, bool)=>{

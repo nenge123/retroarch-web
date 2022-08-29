@@ -4,6 +4,8 @@
     let Module = this.Module;
     this.speed = 1000 / 60;
     this.action = this.action || {};
+    let getAttr = (elm)=>T.$attr.getAttr.call(T.$(elm));
+    let setAttr = (elm,name,value)=>T.$attr.setAttr.call(T.$(elm),name,value);
     Object.assign(this.action, {
         'menu-show': elm => {
             elm.classList.toggle('active');
@@ -32,7 +34,7 @@
             let result = T.$('.g-game-welcome-result');
             if (!result) return;
             let div = this.runaction('game-welcome-elm', [result]);
-            if(!file&&file!=0)return div.innerHTML =  result.getAttribute('data-nulltext');
+            if(!file&&file!=0)return div.innerHTML =  getAttr(result)['data-nulltext'];
             div.innerHTML = T.runaction('span_button_string', [file, {
                 'data-downtext': {
                     'class': "g-btn",
@@ -50,7 +52,7 @@
         'game-welcome-WriteFile': async (file, elm) => {
             let info = Module.RoomsInfo[file];
             if (elm) {
-                elm.removeAttribute('data-name');
+                setAttr(elm,'data-name');
                 elm = elm.parentNode;
                 elm.innerHTML = '';
             }
@@ -180,10 +182,10 @@
             }]);
         },
         'game-content-bios': async elm => {
-            let url = Module.system_bios;
+            let url = Module.system_bios,attr = getAttr(elm);
             if (url) {
-                elm.removeAttribute('data-click');
-                T.FectchItem({
+                setAttr(elm,'data-click');
+                T.FetchItem({
                     'url': url + (url.includes('?') ? '#' : '?') + RAND,
                     'unpack': true,
                     'store': 'data-libjs',
@@ -192,20 +194,20 @@
                         elm.innerHTML = text;
                     },
                     'success': data => {
-                        if (!data) return elm.innerHTML = elm.getAttribute('data-error');
+                        if (!data) return elm.innerHTML = attr['data-error'];
                         Object.entries(data).forEach(entry => {
                             Module.FileDB.MKFILE('/system/' + entry[0], entry[1]);
                         });
-                        elm.innerHTML = elm.getAttribute('data-sussces');
+                        elm.innerHTML = attr['data-sussces'];
                     }
                 });
             }
         },
         'game-content-write': (elm, e) => {
             let aelm = e.target;
-            let file = aelm.getAttribute('data-name');
+            let attr =  getAttr(aelm),file = attr['data-name'];
             if (file) {
-                let type = aelm.getAttribute("data-type");
+                let type = attr['data-type'];
                 if (type) {
                     if (type == 'file') T.runaction('game-cores-run', [file]);
                     else if (type == 'down') T.unitl.download(file.split('/').pop(), Module.FS.readFile(file));
@@ -218,7 +220,7 @@
             FS = FS || Module.FS;
             let uiname = Module.system_uiname || 'glui',
                 path = Module.system_uipath || '/home/web_user/retroarch/bundle/';
-            if (!FS.analyzePath(path + 'assets/' + uiname).exists) Object.entries(await this.FectchItem({
+            if (!FS.analyzePath(path + 'assets/' + uiname).exists) Object.entries(await this.FetchItem({
                 'url': this.JSpath + 'frontend/' + uiname + '-bundle.png?' + RAND,
                 'unpack': true,
                 'store': 'data-libjs',
@@ -272,7 +274,7 @@
                 let cfg_txt = '',
                     name = path.split('/').pop();
                 if (isconfig) {
-                    let configdata = await T.FectchItem({
+                    let configdata = await T.FetchItem({
                         'url': this.JSpath + 'config/' + name + '.js?' + RAND
                     }) || '';
                     if (configdata) {
@@ -373,19 +375,19 @@
             }
         },
         'game-cores-install': async (list, e) => {
-            let elm = e.target;
-            if (!elm || !elm.getAttribute('data-sys')) return;
-            let sys = elm.getAttribute('data-sys');
-            elm.removeAttribute('data-sys');
+            let elm = e.target,attr = getAttr(elm);
+            if (!elm || !attr['data-sys']) return;
+            let sys = attr['data-sys'];
+            setAttr(elm,'data-sys');
             T.Module.canvas = T.$('#canvas');
             let sys2 = sys.replace(/\-/g, '_'),
-                sysext = elm.getAttribute('data-mode') || '',
+                sysext = attr['data-mode'] || '',
                 sysurl = T.JSpath + 'cores/' + (sysext ? sysext + '/' : '') + sys2 + '.png?' + RAND;
             Module.system_key = sys;
             Module.system_keytext = sys2;
             Module.system_keyend = sysext;
             Module.system_fullkey = sys2 + (sysext ? '_' + sysext : '');
-            let corefile = await T.FectchItem({
+            let corefile = await T.FetchItem({
                 'url': sysurl,
                 'unpack': true,
                 'store': 'data-libjs',
@@ -415,7 +417,7 @@
             let asmfile = Module.jsFile[sys2 + '_libretro.js'] || Module.jsFile['retroarch.js'];
             if (asmfile) {
                 if (sys2 == 'snes9x'&&sysext=='BinBashBanana') {
-                    asmfile = new TextDecoder().decode(await await this.FectchItem({
+                    asmfile = new TextDecoder().decode(await await this.FetchItem({
                         'url': T.JSpath + sys2 + '_libretro.js?' + RAND
                     }));
                 }
@@ -429,7 +431,7 @@
         'game-touch-key': () => {
             let getkey = (elm) => {
                 if (elm instanceof Element) {
-                    let key = elm.getAttribute('data-key');
+                    let key = getAttr(elm)['data-key'];
                     if (key && elm.classList.contains('vk')) {
                         return key;
                     }
@@ -485,8 +487,8 @@
         'file-menu-init': () => {
             let fileElm = T.$('.g-file-manager');
             T.$$('.g-file-header').forEach(elm => {
-                let data = {},
-                    db = elm.getAttribute('data-db'),
+                let data = {},attr = getAttr(elm),
+                    db = attr['data-db'],
                     txt = elm.innerHTML;
                 data[txt] = {
                     'class': "g-btn g-blue2",
@@ -502,15 +504,15 @@
                     'data-readtext': {
                         'class': "g-btn g-right",
                         'click': "file-data-read",
-                        'path': elm.getAttribute('data-path') || '',
+                        'path': attr['data-path'] || '',
                         db
                     }
                 }), fileElm]);
                 ['tips', 'result'].forEach(k => {
                     let v = T.$ce(k == 'tips' ? 'div' : 'ul');
                     v.classList.add('g-' + k);
-                    v.setAttribute('data-click', 'file-' + k + '-action');
-                    v.setAttribute('data-db', db)
+                    setAttr(v,'data-click', 'file-' + k + '-action');
+                    setAttr(v,'data-db', db)
                     v.hidden = true;
                     elm.parentNode.appendChild(v);
                 })
@@ -527,7 +529,7 @@
             );
         },
         'file-toggle-result': elm => {
-            let db = elm.getAttribute('data-db');
+            let db = getAttr(elm)['data-db'];
             let elm2 = this.$('.g-result[data-db=' + db + ']');
             if (elm2) {
                 elm2.hidden = !elm2.hidden;
@@ -535,8 +537,9 @@
 
         },
         'file-data-read': async elm => {
-            let db = elm.getAttribute('data-db');
-            let gelm = T.$('.g-file-manager'),
+            let attr = getAttr(elm),
+                db = attr['data-db'],
+                gelm = T.$('.g-file-manager'),
                 div = T.$('.g-result[data-db=' + db + ']'),
                 html = '';
                 if(!div)return;
@@ -579,7 +582,7 @@
                 });
             } else {
                 let islibjs = !['userdata', 'retroarch'].includes(db);
-                let path = elm.getAttribute('data-path');
+                let path =  attr['data-path'];
                 if (!Module.FileDB || !path) {
                     if (path) {
                         let pelm = this.$('.g-tips[data-db=' + db + ']');
@@ -625,7 +628,7 @@
                     return T.runaction('file-data-fs',[path,db,path])
                 }
             }
-            if (!html) html = gelm.getAttribute('data-nulltext');
+            if (!html) html = getAttr(gelm)['data-nulltext'];
             div.innerHTML = html;
 
         },
@@ -641,7 +644,7 @@
                     }
                     else if(path!='/'){
                         name = path.split('/').slice(0,-1).join('/') || '/';
-                        t = gelm.getAttribute('data-updirtext');
+                        t = getAttr(gelm)['data-updirtext'];
                     }else return;
                 html += '<li>';
                 let spandata = {};
@@ -665,10 +668,11 @@
             T.$('.g-result[data-db=' + db + ']').innerHTML = html;
         },
         'file-result-action': async (elm, e) => {
-            let newelm = e.target;
-            let type = newelm.getAttribute('data-type');
-            let db = newelm.getAttribute('data-db');
-            let file = newelm.getAttribute('data-name');
+            let newelm = e.target,
+                attr = getAttr(newelm);
+            let type = attr['data-type'];
+            let db = attr['data-db'];
+            let file = attr['data-name'];
             if (db) {
                 if (type == 'down') {
                     T.unitl.download(file.split('/').pop(), await T.getContent(db == 'data-info' ? 'data-rooms' : db, file));
@@ -681,7 +685,7 @@
                 } else if (type == 'edit') {
                     T.runaction('file-data-edit', [elm, file, db]);
                 } else if (type == 'readpath') {
-                    T.runaction('file-data-fs', [file,db,newelm.getAttribute('data-base')]);
+                    T.runaction('file-data-fs', [file,db]);
                 } else if (type == 'fsdown') {
                     T.unitl.download(file.split('/').pop(), Module.FS.readFile(file));
                 }
@@ -689,7 +693,7 @@
             e.preventDefault();
         },
         'file-data-clear': async elm => {
-            let db = elm.getAttribute('data-db');
+            let db = getAttr(elm)['data-db'];
             await T.clearDB(db);
             if (db == 'data-rooms') await T.clearDB('data-info');
         },
@@ -704,7 +708,7 @@
                 data;
             T.$('.g-file-editor-name').innerHTML = file;
             pathor.value = file;
-            pathor.setAttribute('data-db', db);
+            setAttr(pathor,'data-db', db);
             content.disabled = true;
             if (Module.FS && !(/^data\-/.test(db))) {
                 data = Module.FS.analyzePath(file) && Module.FS.readFile(file) || '';
@@ -724,7 +728,7 @@
             T.$('.g-file-editor').hidden = true;
             let pathor = T.$('.g-file-editor-path'),
                 file = pathor.value,
-                db = pathor.getAttribute('data-db'),
+                db = getAttr(pathor)['data-db'],
                 content = T.$('.g-file-editor-content');
             if (!file) return;
             if (!db) return;
@@ -765,7 +769,7 @@
         'setting-callback': (elm, e) => {
             let target = e.target;
             if (target instanceof Element) {
-                let setting = target.getAttribute('data-setting');
+                let setting = getAttr(target)['data-setting'];
                 if (setting) T.runaction('setting-' + setting, [target, e]);
             }
         },
@@ -778,7 +782,7 @@
             location.reload();
         },
         'setting-quality': (elm) => {
-            let p = elm.getAttribute('data-p');
+            let p = getAttr(elm)['data-p'];
             if (p) {
                 p = parseInt(p);
                 Module.canvasQuality = p > 0 ? p : 720;
@@ -825,12 +829,12 @@
             }
         },
         'span_button_string': (first, data, elm) => {
-            let html = '';
+            let html = '',attr = getAttr(elm);
             if (first) html += '<span>' + first + '</span>';
             if (data) {
                 Object.entries(data).forEach(entry => {
                     let name = entry[0];
-                    if (/^data-/.test(name)) name = elm.getAttribute(name);
+                    if (/^data-/.test(name)) name = attr[name];
                     if (!entry[1]) {
                         html += '<span>' + name + '</span>';
                     } else {
@@ -849,7 +853,7 @@
     this.docload(async () => {
         T.runaction('file-menu-init');
         this.$$('*[data-click]').forEach(elm => this.on(elm, 'pointerup', function (e) {
-            let click = this.getAttribute('data-click');
+            let click = getAttr(this)['data-click'];
             click && T.runaction(click, [this, e]);
         }));
         Module.stopGesture(document);

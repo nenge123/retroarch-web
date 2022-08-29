@@ -118,7 +118,7 @@ key2: 6ccd78a4401ae6c9fda8e770ddbf7608
                     T.runaction('game-FS-ui-file', [FS]);
                     T.runaction('game-FS-config-cfg', [FS, '/etc/retroarch.cfg', config]);
                     T.runaction('game-FS-mkdir-base', [FS]);
-                    await T.FectchItem({
+                    await T.FetchItem({
                         'url':'https://www.emulatorjs.com/api/v?name='+Module.system_keytext+'&_t='+T.unitl.random,
                         'type':'json',
                         'success':(text,headers)=>{
