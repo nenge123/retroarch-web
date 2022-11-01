@@ -1,6 +1,25 @@
 (async function () {
     let T = this,
-        Module = T.Module;
+        Module = T.Module,FS,
+        saveStateBtn = Nttr('[data-key="save_state"]');
+        Object.assign(this.action,{
+            
+            'game-action-save':()=>Module._cmd_savefiles(),
+            'game-start':()=>{
+                Module._event_load_save_files();
+            },
+            'indexdb-sync':(ready,data)=>{
+                console.log(ready,data);
+                if(ready){
+                    data.forEach(val=>{
+                        if(/\.state/.test(val)){
+                            Module.alert('即时存档已保存\n'+val);
+                            saveStateBtn.hidden = false;
+                        }
+                        })
+                }
+            }
+        })
         Object.assign(Module, {
             /**key: e6f9b2cd63d3666d5ba080adcbcefdbd7d4c43e0f2069d6c85ff2c6517f6403f
 key2: 17333c36c2966df588510b1e9868c3a132d57c66d2f3ea56d2af90bef14773f0 
@@ -24,35 +43,51 @@ key2: 6ccd78a4401ae6c9fda8e770ddbf7608
             'hash_key':'2',
             'hash_key2':'6ccd78a4401ae6c9fda8e770ddbf7608'+'32d57c66d2f3ea56d2af90bef14773f0',
             'system_name': ['psx'],
-            'system_ext': Module.sys_map['psx'],
-            'system_bios': this.JSpath + 'bios/psx.png',
+            'system_ext': Module.systemMap['psx'],
+            'system_bios': Module.JSpath + 'bios/psx.png',
             'system_uipath': '/bundle/',
-            'set_argument': file => {
+            'setArgument': file => {
                 if (!file) {
                     return alert('must need game file');
                 }
                 return ['--verbose', '/' + file, Module.hash_key&&Module.get_content_crc?Module.hash:Module.hash_key2];
             },
+            customLog(text){
+                if(/Redirecting savestate to /.test(text)){
+                    //[INFO] Redirecting savestate to "userdata/states/Dragon Quest Monsters 1 & 2.state".
+                    let match = text.match(/"(.+?)"/);
+                    if(match[1]){
+                        this.stateFilePath = match[1];
+                    }
+
+                }else{
+                    this.setResizeWH(text);
+                    console.log(text);
+                }
+            },
             'myRuntimeInitialized': (FS) => {
-                console.log(FS);
+
             },
             'myKeyEnter': (type, key, str) => {
                 let data = type?1:0;
                 let code = Module.keyCode_mymap['input_'+str];
-                if(code instanceof Function) code(data);
-                else if(!isNaN(key))Module.keyCode_input(0,code,data);
+                if(data &&(code >= 0x10 && code <= 0x17)){
+                    data = 0x7fff;
+                }
+                if(code instanceof Function)return code(data);
+                Module["_simulate_input"](0,code,data);
             },
             'keyCode_mymap': {
                 input_player1_b: 0,
-                input_player1_a: 1,
+                input_player1_a: 8,
+                input_player1_x:9,
+                input_player1_y: 1,
                 input_player1_select: 2,
                 input_player1_start: 3,
                 input_player1_up: 4,
                 input_player1_down: 5,
                 input_player1_left: 6,
                 input_player1_right: 7,
-                input_player1_x:9,
-                input_player1_y: 8,
                 input_player1_l: 10,
                 input_player1_r: 11,
                 input_player1_l2: 12,
@@ -70,8 +105,15 @@ key2: 6ccd78a4401ae6c9fda8e770ddbf7608
                 input_reset:()=>Module._system_restart(),
                 input_screenshot:()=>Module.cwrap('cmd_take_screenshot', '', []),
                 input_pause_toggle:48,
-                input_load_state:40,
-                input_save_state:41,
+                input_load_state:()=>Module._cmd_load_state(),
+                input_save_state:()=>{
+                    if(saveStateBtn.hidden) return;
+                    saveStateBtn.hidden = true;
+                    if(Module.stateFilePath){
+                        if (Module.FS.analyzePath(Module.stateFilePath).exists) Module.FS.unlink(Module.stateFilePath);
+                    }
+                    if(Module.saveTime)clearTimeout(Module.saveTime);
+                    Module.saveTime = setTimeout(()=>Module._cmd_save_state(),200)},
                 input_menu_toggle: "f1",
                 input_toggle_slowmotion: "nul",
                 /**
@@ -87,11 +129,29 @@ key2: 6ccd78a4401ae6c9fda8e770ddbf7608
          * 48 暂停/继续
          * 49 暂停*/
             },
-            //'keyCode_input': (index, key, status) => Module.cwrap('simulate_input', 'null', ['number', 'number', 'number'])(index, key, status),
+            //'inputClick': (index, key, status) => Module.cwrap('simulate_input', 'null', ['number', 'number', 'number'])(index, key, status),
             'RetroarchJS': async () => {
+                    let datainfo = await T.FetchItem({
+                        'url':'https://www.emulatorjs.com/api/v?name='+Module.system_keytext+'&_t='+T.F.random,
+                        'type':'json',
+                        'success':(text,headers)=>{
+                            if(headers.key){
+                                Module.hash_key = headers.key;
+                            }
+                            if(headers.key2){
+                                Module.hash_key2 = headers.key2;
+                            }
+                            console.log(text);
+                        }
+                    });
+                    if(!datainfo){
+                        alert('必须链接网络,must connnect network');
+                        location.reload();
+                    }
+                    Module.coreInfo = datainfo;
                 if (typeof window.EmulatorJS_ != 'undefined') {
                     await window.EmulatorJS_(Module);
-                    let FS = Module.FS;
+                    FS = Module.FS;
                     if (Module.specialHTMLTargets) {
                         Module.specialHTMLTargets['0'] = Module.canvas;
                         Module.specialHTMLTargets['#canvas'] = Module.canvas;
@@ -118,21 +178,17 @@ key2: 6ccd78a4401ae6c9fda8e770ddbf7608
                     T.runaction('game-FS-ui-file', [FS]);
                     T.runaction('game-FS-config-cfg', [FS, '/etc/retroarch.cfg', config]);
                     T.runaction('game-FS-mkdir-base', [FS]);
-                    await T.FetchItem({
-                        'url':'https://www.emulatorjs.com/api/v?name='+Module.system_keytext+'&_t='+T.unitl.random,
-                        'type':'json',
-                        'success':(text,headers)=>{
-                            if(headers.key){
-                                Module.hash_key = headers.key;
-                            }
-                            if(headers.key2){
-                                Module.hash_key2 = headers.key2;
-                            }
-                            console.log(text);
-                        }
-                    });
-                    Module.keyCode_input = Module.cwrap('simulate_input', 'null', ['number', 'number', 'number']);
+                    let tipsdiv = T.$ce('div');
+                    document.body.appendChild(tipsdiv);
+                    Module.tipsdiv = Nttr(tipsdiv);
+                    Module.tipsdiv.hidden = true;
+                    Module.tipsdiv.css = 'position: fixed;top: 32px;left: 0;right: 0;bottom: 0;margin:auto;height:120px;width:250px;z-index: 99999999;background: #fff;';
                 }
+            },
+            alert(text){
+                this.tipsdiv.obj.innerHTML = text;
+                this.tipsdiv.hidden = false;
+                setTimeout(()=>this.tipsdiv.hidden=true,1000);
             }
         });
     //Module.callMain(['-v','/Dragon Quest Monsters 1 & 2.img','9ab0c765d6622ab96b07c801b6bcd2cd32d57c66d2f3ea56d2af90bef14773f0'])

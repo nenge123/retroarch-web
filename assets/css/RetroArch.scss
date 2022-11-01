@@ -95,8 +95,8 @@ body {
 
         *,
         & {
-            user-select: none;
             -webkit-user-select: none;
+            user-select: none;
             touch-action: none;
         }
     }
@@ -218,6 +218,7 @@ body {
                 z-index: 9999;
                 background-color: #fff;
                 overflow: hidden;
+                overflow-y: auto;
                 transition:opacity .5s ease-in-out;
                 .g-list {
                     >div {
@@ -415,7 +416,7 @@ body {
                 }
 
                 .g-game-ctrl {
-                    position: absolute;
+                    position: relative;
                     min-width: 350px;
                     left: 0;
                     right: 0;
@@ -654,11 +655,13 @@ body {
 
                 @media screen and (orientation: portrait) and (max-width:800px) {
                     >#canvas {
-                        position: absolute;
                         height: auto !important;
                     }
                     .g-game-ctrl{
-                        top:calc(100vw / 1.5);
+                        position: fixed;
+                        height: 280px;
+                        bottom: 15px;
+                        top:unset;
                         .vk{
                             
                             &[data-k=ai]{
@@ -678,15 +681,12 @@ body {
                 }
 
                 @media screen and (orientation: landscape) and (max-height:800px) {
-                    >#canvas {
-                        position: absolute;
-                    }
-
                     .g-game-ctrl {
+                        position: absolute;
                         left: 0;
                         right: 0;
-                        bottom: 0;
-                        top: 45px !important;
+                        bottom:35px;
+                        top: 30px;
                         .vk {
 
                             &[data-k=start],

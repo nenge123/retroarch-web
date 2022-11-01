@@ -1,9 +1,9 @@
 (async function () {
     let T=this,Module = T.Module,FS = Module.FS;
     Module.system_name = ['psx'];
-    Module.system_ext = Module.sys_map['psx'];
+    Module.system_ext = Module.systemMap['psx'];
     Module.system_ext.push('ccd');
-    Module.system_bios = this.JSpath+'bios/psx.png';
+    Module.system_bios = Module.JSpath+'bios/psx.png';
     Module.canvasX = 0;
     Module.canvasY = 0;
     T.on(Module.canvas,'touchend',e=>{

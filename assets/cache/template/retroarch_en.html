@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-hans">
+<html lang="us-en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -10,7 +10,7 @@
     <meta name="x-content-type-options" content="nosniff" />
     <meta name="renderer" content="webkit">
     <title>RetroArch Web</title>
-    <link rel="stylesheet" href="RetroArch.scss" />
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1661739380" />
 </head>
 
 <body>
@@ -25,7 +25,7 @@
             <div class="g-btn-forward" data-click="game-cores-forward" hidden></div>
             <div class="g-menu-list">
                 <div class="g-list" data-click="setting-callback">
-                    <div data-setting="showfile">文件管理File</div>
+                    <div data-setting="showfile">File Manager</div>
                     <div data-setting="fanyi">翻译设置AI</div>
                     <div data-setting="ctrlkey">键位设置ctrlkey</div>
                     <div data-setting='record-action'>开始/结束录制start/stop Record</div>
@@ -47,7 +47,12 @@
     </div>
     <div class="g-main">
         <div class="container g-start-ui">
-            <ul class="g-start-list" data-click="game-cores-install">
+            <button data-click="upload-zip-fs">upload a  zip-fs.js file</button><hr>
+            <button data-click="reset-data">reset  data in indexdb</button><hr>
+            <button data-click="reset-cores">reset the cores data in indexdb</button><hr>
+            <div class="test-result" style="color:red;">waiting ....</div><hr>
+
+            <ul class="g-start-list" data-click="game-cores-install" hidden>
                 <li class="g-cores">
                     <h3 class="g-card-header">
                         <span>Vba-next</span>
@@ -72,102 +77,6 @@
                         </ul>
                     </div>
                 </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>snes9x</span>
-                        <button class="g-btn" data-sys="snes9x" data-mode="BinBashBanana">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:github/BinBashBanana/webretro</li>
-                            <li>support:snes/sfc</li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>mednafen_psx_hw</span>
-                        <button class="g-btn" data-sys="mednafen_psx_hw" data-mode="BinBashBanana">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:github/BinBashBanana/webretro</li>
-                            <li>support:PlayStation</li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>mupen64plus_next</span>
-                        <button class="g-btn" data-sys="mupen64plus_next" data-mode="BinBashBanana">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:github/BinBashBanana/webretro</li>
-                            <li>support:n64</li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>snes9x</span>
-                        <button class="g-btn" data-sys="snes9x" data-mode="libretro">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:github/libretro/Retroarch</li>
-                            <li>support:sfc/snes</li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>gambatte</span>
-                        <button class="g-btn" data-sys="gambatte" data-mode="libretro">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:github/libretro/Retroarch</li>
-                            <li>support:gb/gbc</li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>genesis_plus_gx</span>
-                        <button class="g-btn" data-sys="genesis_plus_gx" data-mode="libretro">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:github/libretro/Retroarch</li>
-                            <li>support:sega ss/gg/mm</li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>nestopia</span>
-                        <button class="g-btn" data-sys="nestopia" data-mode="libretro">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:github/libretro/Retroarch</li>
-                            <li>support:nes</li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="g-cores">
-                    <h3 class="g-card-header">
-                        <span>psx</span>
-                        <button class="g-btn" data-sys="psx" data-mode="emulatorjs">启动OPEN</button>
-                    </h3>
-                    <div class="g-card-body">
-                        <ul>
-                            <li>source:https://emulatorjs.com</li>
-                            <li>support:PlayStation</li>
-                        </ul>
-                    </div>
-                </li>
             </ul>
         </div>
         <div class="container g-game-ui no-select" hidden>
@@ -176,6 +85,7 @@
                 <div class="g-game-welcome">
                     <h3>
                         <span>请选择装载内容</span>
+                        <button class="g-btn" data-click="reset-reload">reload </button>   
                         <button class="g-btn" data-click="menu-reload">test</button>
                         <button class="g-btn g-right g-blue2" data-click="game-content-bios" data-sussces="完成!"
                             data-error="失败!">写入bios</button>
@@ -251,6 +161,7 @@
     <script type="text/javascript" src="assets/RetroArch/retroarch_core.js?<?php echo time();?>"></script>
     <script type="text/javascript" src="assets/RetroArch/retroarch_Module.js?<?php echo time();?>"></script>
     <script type="text/javascript" src="assets/RetroArch/retroarch_mount.js?<?php echo time();?>"></script>
-    <script type="text/javascript" src="assets/RetroArch/retroarch_base.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_base2.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/retroarch_zipfs.js?<?php echo time();?>"></script>
 </body>
 </html>
