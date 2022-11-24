@@ -380,13 +380,14 @@ const RetroArch = new class NengeStart {
             T.addJS('https://unpkg.com/gitalk/dist/gitalk.css',async ()=>{
                 await T.addJS('https://unpkg.com/gitalk/dist/gitalk.min.js', undefined);
                 const gitalk = new Gitalk({
+                    enable: true,
                     clientID: 'b2b8974cb49ea9ae7d10',
                     clientSecret: '4618bde13d3fa57c5fb53692ad65d483baec6204',
                     repo: 'retroarch-web',
                     owner: 'nenge123',
                     admin: ['nenge123'],
                     id: 'https://retroarch.nenge.net/',      // Ensure uniqueness and length less than 50
-                    distractionFreeMode: false  // Facebook-like distraction free mode
+                    distractionFreeMode: true  // Facebook-like distraction free mode
                 });
                 gitalk.render('gitalk-container');
             }, 1);
