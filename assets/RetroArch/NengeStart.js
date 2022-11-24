@@ -386,6 +386,7 @@ const RetroArch = new class NengeStart {
                     repo: 'retroarch-web',
                     owner: 'nenge123',
                     admin: ['nenge123'],
+                    labels:['Gitalk'],
                     id: 'https://retroarch.nenge.net/',      // Ensure uniqueness and length less than 50
                     distractionFreeMode: true  // Facebook-like distraction free mode
                 });
