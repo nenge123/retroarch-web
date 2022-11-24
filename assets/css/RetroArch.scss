@@ -44,6 +44,7 @@ body {
     }
 
     .g-btn {
+        font-weight: bold;
         font-size: .625rem;
         height: 24px;
         display: inline-block;
@@ -57,8 +58,7 @@ body {
         &.g-right {
             position: absolute;
             right: 0px;
-            padding: 3px 0px;
-            width: 40px;
+            padding: 3px 4px;
             top: 0;
             bottom: 0;
             height: 24px;
@@ -75,7 +75,6 @@ body {
         }
 
         &.g-red {
-            font-weight: bold;
             color: #fff;
             background-color: #b7778d;
             background-image: linear-gradient(0deg, #ef2004a6, #ab3d606b);
@@ -100,7 +99,8 @@ body {
             touch-action: none;
         }
     }
-    .add-home-app{
+
+    .add-home-app {
         position: fixed;
         top: auto;
         bottom: 0px;
@@ -111,6 +111,10 @@ body {
         background-color: #000;
         color: #fff;
         z-index: 99999;
+    }
+
+    .p-1 {
+        padding: .675rem;
     }
 }
 
@@ -127,6 +131,9 @@ body {
         left: 0;
         right: 0;
         z-index: 10;
+        background-image: linear-gradient(180deg, #0089ff, #0089ffb5, #0089ffb5, #0089ff82, #0089ff38);
+        border-bottom: 1px solid #00c4ff;
+
         >.container {
             display: flex;
             justify-content: space-between;
@@ -135,7 +142,7 @@ body {
             flex-wrap: nowrap;
             height: 32px;
 
-            >.g-btn-menu {
+            >.MenuBtn {
                 border: 0;
                 width: 2rem;
                 height: 2rem;
@@ -205,7 +212,7 @@ body {
 
             >.g-menu-list {
                 position: fixed;
-                top: 32px;
+                top: 33px;
                 left: 0;
                 right: 0;
                 bottom: 0;
@@ -219,7 +226,7 @@ body {
                 background-color: #fff;
                 overflow: hidden;
                 overflow-y: auto;
-                transition:opacity .5s ease-in-out;
+
                 .g-list {
                     >div {
                         cursor: pointer;
@@ -243,8 +250,7 @@ body {
 
             }
 
-            >.g-btn-menu.active ~ .g-menu-list {
-                transition:height .2s ease-in-out,width .2s ease-in-out,opacity .1s ease-in-out;
+            >.MenuBtn.active~.g-menu-list {
                 width: 1000px;
                 height: calc(100% - 32px);
                 opacity: 1;
@@ -275,7 +281,7 @@ body {
                 display: none;
             }
 
-            .g-btn-add {
+            .g-btn-addContent {
                 background-image: url(../../images/hotkey_digital.png);
             }
         }
@@ -283,7 +289,7 @@ body {
 
     >.g-main {
         position: fixed;
-        top: 32px;
+        top: 33px;
         left: 0;
         right: 0;
         bottom: 0;
@@ -302,52 +308,86 @@ body {
         }
 
         >.g-start-ui {
-            touch-action: pan-y;
-            *{
-                touch-action: pan-y;
+            background: #d1d1d1;
+            padding: 5px;
+
+            #gitalk-container {
+                background: #fff;
             }
-            .g-start-list {
-                display: flex;
-                justify-content: space-evenly;
-                align-content: flex-start;
-                flex-wrap: wrap;
-                flex-direction: row;
-                align-items: stretch;
-                padding: 20px;
 
-                .g-cores {
-                    width: max(300px, calc(50% - 1px));
-                    max-width: 90%;
-                    text-align: left;
-                    padding: 0px 10px;
-                    list-style: none;
-                    margin: 0px 0px 10px;
+            .system-cores-list {
+                h4 {
+                    margin: 2px;
+                }
 
-                    >h3 {
-                        position: relative;
-                        margin: 0px 0px 10px;
-                    }
+                p {
+                    font-size: .675rem;
+                    margin: 1px;
+                }
 
-                    >.g-card-body {
-                        font-size: .625rem;
+                >h3 {
+
+                    text-indent: 1rem;
+
+                }
+
+                >ul {
+                    display: flex;
+                    padding: 2px;
+                    margin: 2px auto;
+                    flex-wrap: wrap;
+                    align-items: flex-start;
+
+                    >li {
+                        border: 1px solid #687778;
+                        list-style: none;
+                        padding: 5px;
+                        margin: 5px 5px 5px auto;
+                        display: inline-block;
+                        min-width: 280px;
+                        max-width: 100%;
+                        flex-grow: 1;
+
+                        >h4[data-act] {
+                            text-align: center;
+                        }
+
+                        ul {
+
+                            list-style: none;
+                            padding: 5px;
+                            display: flex;
+                            flex-wrap: wrap;
+
+                            li {
+                                background: #e7e3e3;
+                                border: 1px solid #fff;
+                                padding: 5px;
+                                margin: 5px;
+                            }
+                        }
                     }
                 }
+
             }
 
         }
 
         >.g-game-ui {
             opacity: 1;
-            transition: top .1s, opacity 0s .3s;
+            width: unset;
             background-color: #000;
             overflow: hidden;
             z-index: 1;
+                    width: 100%;
+                    max-width: unset;
 
             .g-mobile-click {
                 position: absolute;
-                width: 220px;
+                width: 100%;
+                height:100%;
                 font-size: 1rem;
-                height: 300px;
+                line-height: 100vh;
                 left: 0;
                 right: 0;
                 bottom: 0;
@@ -355,16 +395,9 @@ body {
                 margin: auto;
                 z-index: 9999;
             }
-
-            .g-mobile-click:not([hidden])~.game-container {
-                pointer-events: none;
-            }
-
-            .game-container {
-                text-align: center;
-
-                >.g-game-welcome {
+>.g-game-welcome {
                     position: absolute;
+                    text-align: center;
                     top: 1rem;
                     left: 1rem;
                     right: 1rem;
@@ -375,6 +408,66 @@ body {
                     color: #000;
                     margin: auto;
                     z-index: 9;
+                    font-size: .675rem;
+
+                    ul {
+                        text-align: left;
+                    }
+
+                    p {
+                        margin: 1px;
+                    }
+
+                    h2 {
+                        background: #62696e;
+                        color: #fff;
+                    }
+
+                    >.g-status p,
+                    >.g-FS-log p {
+                        text-align: left;
+                        padding-left: 2rem;
+                    }
+
+                    >.g-rooms {
+                        .flex {
+                            display: flex;
+                            display: flex;
+                            justify-content: center;
+                            flex-wrap: wrap;
+                            align-items: stretch;
+
+                            button {
+                                margin: 4px;
+                                padding: 4px;
+                                height: unset;
+                                font-size: .875rem;
+
+                                b {
+                                    font-variant: petite-caps;
+                                }
+                            }
+                        }
+
+                        li {
+                            margin-bottom: 5px;
+                        }
+                    }
+
+                    >.g-bios {
+                        font-size: .675rem;
+
+                        .flex {
+                            display: flex;
+                            justify-content: center;
+                            flex-wrap: wrap;
+
+                            button {
+                                margin: 1px 3px;
+                            }
+                        }
+
+                    }
 
                     .g-right {
                         width: unset;
@@ -403,6 +496,14 @@ body {
                         }
                     }
                 }
+            .g-mobile-click:not([hidden])~.game-container {
+                pointer-events: none;
+            }
+
+
+                
+            .game-container {
+                text-align: center;
 
                 >#canvas {
                     width: 100% !important;
@@ -415,303 +516,215 @@ body {
                     z-index: 1;
                 }
 
-                .g-game-ctrl {
-                    position: relative;
-                    min-width: 350px;
-                    left: 0;
-                    right: 0;
-                    top: 0;
-                    z-index: 2;
-
-                    .vk {
+                .game-controller {
+                    width: 100%;
+                    display: flex;
+                    justify-content: space-between;
+                    flex-wrap: nowrap;
+                    align-items: stretch;
+                    button{
+                        background: transparent;
+                        border: 1px solid #6e6161;
+                        color: #000000;
+                        background: #ffffff45;
+                        outline: none;
                         position: absolute;
-                        text-align: center;
-                        overflow: hidden;
-                        font-size: 0.875rem;
-                        color: #FFF;
-                        z-index: 3;
-                        vertical-align: middle;
-                        border: 1px #fff solid;
-                        border-radius: .25rem;
-                        line-height: 150%;
-                        touch-action: none;
-                        opacity: 0.5;
+                    }
+                    .g-dp{
+                        position: absolute;
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: flex-start;
+                        align-items: stretch;
+                        flex-direction: row;
+                    }
+                    .g-left,
+                    .g-right {
+                        position: relative;
+                        width: 50%;
+                        flex-grow: 1;
 
-                        &.active {
-                            background-color: #ffffffbf;
+                    }
+                    @media screen and (orientation: portrait) and (max-width:800px) {
+                        height:min(100vw,400px);
+                        .g-dp{
+                            margin: auto;
+                            top: 0;
+                            bottom: 0;
+                            left: calc((100% - min(50vw,180px))/2);
+                            width: min(50vw,180px);
+                            height: min(50vw,180px);
+                            button{
+                                position: relative;
+                                margin: 1px;                            
+                                text-align: center;
+                                padding: 0px;
+                                line-height: 1.5;
+                                border-radius: 5px;
+                                width:calc(33% - 4px);height:calc(33% - 4px);
+                            }
+                            .key-left-null{
+                                width: calc(33% - 2px);
+                                height: calc(33% - 2px);
+                                border: none;
+                                background: transparent;
+                            }
+                            .key-right-x,
+                            .key-right-y,
+                            .key-right-a,
+                            .key-right-b{
+                                border-radius: 50%;
+                            }
+                            .key-right-x{
+                                margin: 0px 33%;
+                            }
+                            .key-right-a{
+                                margin: 15% 10% 0px 56%;
+                            }
+                            .key-right-b{
+                                margin: 0% 46% 15% 20%;
+                            }
+                            .key-right-y~.key-right-a{
+                                margin:0px 0px 0px 33%;
+                            }
+                            .key-right-y~.key-right-b{
+                                margin: 0px 33%;
+                            }
                         }
-
-                        &[data-k=r],
-                        &[data-k=l],
-                        &[data-k=loadstate],
-                        &[data-k=savestate] ,
-                        &[data-k=stop] ,
-                        &[data-k=save] ,
-                        &[data-k=ai] {
-                            padding: 2px;
-                            width: 60px;
-                            top: 0px
-                        }
-
-                        &[data-k=l] {
-                            left: 15px;
-                        }
-
-                        &[data-k=r] {
-                            right: 15px;
-                        }
-                        
-                        &[data-k=loadstate]{
-                            left: 80px;
-                        }
-                        &[data-k=savestate]{
-                            right: 80px;
-                        }
-                        &[data-k=start],
-                        &[data-k=select] {
-                            padding: 0px;
-                            width: 60px;
-                            font-size: 0.75rem;
+                        .key-l{
+                            left:1vw;
+                            top: 1vw;
+                            width:20vw;
                             border-radius: 5px;
-                            top: 220px;
                         }
-
-                        &[data-k=select] {
-                            left:calc(50% - 70px);
+                        .key-r{
+                            right: 1vw;
+                            top: 1vw;
+                            width:20vw;
+                            border-radius: 5px;
                         }
-
-                        &[data-k=start] {
-                            right: calc(50% - 70px);
+                        .key-start{
+                            left: 1vw;
+                            bottom: 1vw;
+                            width:20vw;
+                            border-radius: 5px;
                         }
-
-                        &[data-k=up],
-                        &[data-k=down],
-                        &[data-k=left],
-                        &[data-k=right] {
-                            font-size: 2.1875rem;
-                            width: 50px;
-                            height: 50px;
-                        }
-
-                        &[data-k=dl],
-                        &[data-k=dr],
-                        &[data-k=ul],
-                        &[data-k=ur] {
-                            width: 30px;
-                            height: 30px;
-                            background: transparent !important;
-
-                        }
-
-                        &[data-k=up] {
-                            left: 55px;
-                            top: 45px;
-                        }
-
-                        &[data-k=down] {
-                            top: 150px;
-                            left: 55px;
-                        }
-
-                        &[data-k=left] {
-                            top: 95px;
-                            left: 5px;
-                        }
-
-                        &[data-k=right] {
-                            top: 95px;
-                            left: 105px;
-                        }
-
-                        &[data-k=dl] {
-                            left: 5px;
-                            top: 170px;
-                            border-color: transparent;
-                        }
-
-                        &[data-k=dr] {
-                            left: 125px;
-                            top: 170px;
-                            border-color: transparent;
-                        }
-
-                        &[data-k=ul] {
-                            top: 45px;
-                            border-color: transparent;
-                            left: 5px;
-                        }
-
-                        &[data-k=ur] {
-                            top: 45px;
-                            left: 125px;
-                            border-color: transparent;
-                        }
-
-                        &[data-k=b],
-                        &[data-k=a],
-                        &[data-k=x],
-                        &[data-k=y] {
-                            width: 45px;
-                            height: 45px;
-                            font-size: 2.1875rem;
-                            line-height: 45px;
-                            border-radius: 50%;
-                        }
-
-                        &[data-k=a] {
-                            top: 95px;
-                            right: 15px;
-
-                        }
-
-                        &[data-k=b] {
-                            top: 140px;
-                            right: 60px;
-                        }
-
-                        &[data-k=x] {
-                            top: 95px;
-                            right: 105px;
-
-                            &::after {
-                                content: attr(data-k);
-                                text-transform: uppercase;
-                            }
-
-                        }
-
-                        &[data-k=y] {
-                            top: 50px;
-                            right: 60px;
-
-                            &::after {
-                                content: attr(data-k);
-                                text-transform: uppercase;
-                            }
-
+                        .key-select{
+                            right: 1vw;
+                            bottom: 1vw;
+                            width:20vw;
+                            border-radius: 5px;
                         }
                     }
-
-                    &.gba {
-                        .vk {
-
-                            &[data-k=b],
-                            &[data-k=a],
-                            &[data-k=x],
-                            &[data-k=y] {
-                                width: 65px;
-                                height: 65px;
-                                line-height: 65px;
-                            }
-
-                            &[data-k=a] {
-                                top: 50px;
-                                right: 15px;
-
-                            }
-
-                            &[data-k=b] {
-                                top: 90px;
-                                right: 100px;
-
-                            }
-
-                            &[data-k=x] {
-                                top: 140px;
-                                right: 30px;
-                                width: 25px;
-                                height: 25px;
-                                font-size: 0.875rem;
-                                color: red;
-                                border: 1px red dashed;
-                                line-height: 25px;
-
-                                &::after {
-                                    content: "A";
-                                    text-transform: uppercase;
-                                }
-
-                            }
-
-                            &[data-k=y] {
-                                top: 40px;
-                                right: 122px;
-                                width: 25px;
-                                height: 25px;
-                                font-size: 14px;
-                                color: red;
-                                border: 1px red dashed;
-                                line-height: 25px;
-
-                                &::after {
-                                    content: "B";
-                                    text-transform: uppercase;
-                                }
-
-                            }
-                        }
-                    }
-                }
-
-                @media screen and (orientation: portrait) and (max-width:800px) {
-                    >#canvas {
-                        height: auto !important;
-                    }
-                    .g-game-ctrl{
-                        position: fixed;
-                        height: 280px;
-                        bottom: 15px;
-                        top:unset;
-                        .vk{
-                            
-                            &[data-k=ai]{
-                                left:calc(50% - 30px);
-                            }
-                            &[data-k=save]{
-                                right: 30px;
-                                top: 200px;
-                            }
-                            &[data-k=stop]{
-                                left: 30px;
-                                top: 215px;
-                            }
-                        }
-
-                    }
-                }
-
-                @media screen and (orientation: landscape) and (max-height:800px) {
-                    .g-game-ctrl {
+                    @media screen and (orientation: landscape) and (max-height:800px) {
                         position: absolute;
+                        top:0;
                         left: 0;
+                        bottom: 15vh;
                         right: 0;
-                        bottom:35px;
-                        top: 30px;
-                        .vk {
-
-                            &[data-k=start],
-                            &[data-k=select] {
-                                top: unset;
-                                bottom: 20px;
+                        .g-dp{
+                            margin: auto;
+                            top: 0;
+                            bottom: 0;
+                            left: 2vh;
+                            width: min(50vh,180px);
+                            height: min(50vh,180px);
+                            button{
+                                position: relative;
+                                margin: 1px;                            
+                                text-align: center;
+                                padding: 0px;
+                                line-height: 1.5;
+                                border-radius: 5px;
+                                width:calc(33% - 4px);height:calc(33% - 4px);
                             }
-                            &[data-k=select]{
-                                left: 50px;
+                            .key-left-null{
+                                width: calc(33% - 2px);
+                                height: calc(33% - 2px);
+                                border: none;
+                                background: transparent;
                             }
-                            &[data-k=start]{
-                                right: 50px;
+                            .key-right-x,
+                            .key-right-y,
+                            .key-right-a,
+                            .key-right-b{
+                                border-radius: 50%;
                             }
-                            &[data-k=ai]{
-                                left:145px;
+                            .key-right-x{
+                                margin: 0px 33%;
                             }
-                            &[data-k=save]{
-                                right:145px;
+                            .key-right-y{
+                                margin-left: 15% 10% 0px 56%;
                             }
-                            &[data-k=stop]{
-                                right: 50px;
-                                bottom: 60px;
-                                top: unset;
+                            .key-right-a{
+                                margin: 15% 10% 0px 56%;
                             }
-
+                            .key-right-b{
+                                margin: 0% 46% 15% 20%;
+                            }
+                            .key-right-y~.key-right-a{
+                                margin:0px 0px 0px 33%;
+                            }
+                            .key-right-y~.key-right-b{
+                                margin: 0px 33%;
+                            }
+                            @media screen and (max-width:670px){     
+                                .key-right-x,
+                                .key-right-y,
+                                .key-right-a,
+                                .key-right-b{
+                                    border-radius: 50%;
+                                    width: 25%;
+                                    height: 25%;
+                                }                           
+                                .key-right-x{
+                                    margin:0px 0px 0px 66%;
+                                }
+                                .key-right-y{
+                                    margin-left:33%;
+                                }
+                                .key-right-y~.key-right-a{
+                                    margin:0px 0px 0px 8%;
+                                }
+                                .key-left-null,
+                                .key-left-left,
+                                .key-left-up,
+                                .key-left-down,
+                                .key-left-right{
+                                    width: 25%;
+                                    height: 25%;
+                                }
+                            }
+                        }
+                        .g-right{
+                            .g-dp{
+                                left: unset;
+                                right: 2vh;
+                            }
+                        }
+                        .key-l{
+                            left:1vh;
+                            top: 4vh;
+                            width:20vh;
+                            border-radius: 5px;
+                        }
+                        .key-r{
+                            right: 1vh;
+                            top: 4vh;
+                            width:20vh;
+                            border-radius: 5px;
+                        }
+                        .key-start{
+                            right:10vh;
+                            bottom: 1vh;
+                            width:20vh;
+                            border-radius: 5px;
+                        }
+                        .key-select{
+                            left: 10vh;
+                            bottom: 1vh;
+                            width:20vh;
+                            border-radius: 5px;
                         }
                     }
                 }
@@ -728,30 +741,13 @@ body {
                 background: #fff;
 
             }
-
-            @media screen and (orientation: portrait) and (max-width:800px) {
-                & {
-                    width: 100%;
-                    max-width: unset;
-                }
-            }
-
-            @media screen and (orientation: landscape) and (max-height:800px) {
-                & {
-                    width: 100%;
-                    max-width: unset;
-                }
-            }
         }
 
-        .g-file-ui {
+        .FileUI {
             transition: top .1s, opacity 0s .3s;
             background-color: #fff;
             z-index: 2;
-            touch-action: pan-y;
-            *{
-                touch-action: pan-y;
-            }
+
             >.g-file-manager {
                 position: absolute;
                 left: 0;
@@ -760,6 +756,7 @@ body {
                 bottom: 0;
                 overflow: hidden;
                 overflow-y: auto;
+
                 >.g-box {
                     margin: 5px;
                     border-radius: .25rem;
@@ -812,6 +809,35 @@ body {
 
                 }
 
+            }
+
+            >.g-file-upload {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                top: 0;
+                background-color: #fff;
+                padding: 2rem;
+
+                >ul {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: stretch;
+                    flex-wrap: wrap;
+                    align-content: stretch;
+
+                    >li {
+                        >.g-btn {
+                            font-size: 1.25rem;
+                            height: revert;
+                            display: inline-block;
+                            margin: 4px auto;
+                        }
+
+                    }
+                }
             }
 
             >.g-file-editor {
@@ -871,7 +897,8 @@ body {
                         .g-file-editor-path {
                             width: 100%;
                         }
-                        .g-btn{
+
+                        .g-btn {
                             display: block;
                             padding: 3px 8px;
                         }
