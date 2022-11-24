@@ -387,7 +387,7 @@ const RetroArch = new class NengeStart {
                     owner: 'nenge123',
                     admin: ['nenge123'],
                     labels:['Gitalk'],
-                    proxy:"http://api.nenge.net/gitalk.php",
+                    proxy:"https://api.nenge.net/gitalk.php",
                     id: 'retroarch.nenge.net',      // Ensure uniqueness and length less than 50
                     distractionFreeMode: true  // Facebook-like distraction free mode
                 });
