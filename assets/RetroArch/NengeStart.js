@@ -42,7 +42,7 @@ const RetroArch = new class NengeStart {
             });
             this.BulidMenuList();
             this.BulidCores();
-            if (!/(127\.0\.0\.1|localhost)/.test(location.host)) {
+            //if (!/(127\.0\.0\.1|localhost)/.test(location.host)) {
                 Module.JSpath = Module.JSpath.replace(/^https?:\/\/.+?\//,'https://retroarch.nenge.net/')
                 T.addJS('https://unpkg.com/gitalk/dist/gitalk.css',async ()=>{
                     //await T.addJS('https://unpkg.com/gitalk/dist/gitalk.min.js', undefined);
@@ -64,7 +64,7 @@ const RetroArch = new class NengeStart {
                     });
                     gitalk.render('gitalk-container');
                 }, 1);
-            }
+            //}
         });
     }
     action = {

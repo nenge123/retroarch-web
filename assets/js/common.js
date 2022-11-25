@@ -208,7 +208,7 @@ const Nenge = new class NengeCores{
         }
         response = ARG.process ? F.StreamResponse(response, ARG) : response;
         let contents = await response[ARG.type || 'arrayBuffer'](), type = headers.type;let filesize = headers["byteLength"]||contents&&contents.length || 0,filetype = headers['content-type'];
-        if (contents&&contents.byteLength) {
+        if (contents instanceof ArrayBuffer) {
             contents = new Uint8Array(contents.buffer || contents);
             type = 'Uint8Array';
             filesize = contents.byteLength;
