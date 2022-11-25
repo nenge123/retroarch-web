@@ -207,13 +207,13 @@ const Nenge = new class NengeCores{
             result = null;
         }
         response = ARG.process ? F.StreamResponse(response, ARG) : response;
-        let contents = await response[ARG.type || 'arrayBuffer'](), type = headers.type;
-        if (contents.byteLength) {
+        let contents = await response[ARG.type || 'arrayBuffer'](), type = headers.type;let filesize = headers["byteLength"]||contents&&contents.length || 0,filetype = headers['content-type'];
+        if (contents&&contents.byteLength) {
             contents = new Uint8Array(contents.buffer || contents);
             type = 'Uint8Array';
+            filesize = contents.byteLength;
         }
-        let filesize = contents.byteLength || headers["byteLength"] || contents.length || 0,
-            filetype = headers['content-type'];
+           
         ARG.dataOption = ARG.dataOption||{};
         if (Store && ARG.unpack && key === keyname && filesize > T.maxsize) {
             type = 'unpack';
