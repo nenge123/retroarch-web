@@ -221,6 +221,7 @@ const Nenge = new class NengeCores{
             delete ARG.store;
         }
         if (ARG.unpack && I.u8obj(contents)) {
+            if(ARG.Filter)contents =  ARG.Filter(contents);
             contents = await unFile(contents, password);
             if (!contents.byteLength){
                 if(contents.password){
@@ -513,6 +514,10 @@ const Nenge = new class NengeCores{
             if (post) {
                 data.method = 'POST';
                 data.body = I.post(post);
+            }else if(ARG.json){
+                
+                data.method = 'POST';
+                data.body = typeof ARG.json =='string'?ARG.json:JSON.stringify(ARG.json);
             }
             return fetch(url, data);
         }
