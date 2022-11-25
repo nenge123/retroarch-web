@@ -47,7 +47,7 @@ const RetroArch = new class NengeStart {
                 T.addJS('https://unpkg.com/gitalk/dist/gitalk.css',async ()=>{
                     //await T.addJS('https://unpkg.com/gitalk/dist/gitalk.min.js', undefined);
                     let gitalkjs = await T.FetchItem({url:'https://unpkg.com/gitalk/dist/gitalk.min.js','type':'text'});
-                    gitalkjs.replace(/\w\.axiosJSON\.post\(\w\.options\.proxy,\{code:\w,client_id:\w\.options\.clientID,client_secret:\w\.options\.clientSecret\}\)\.then\(function\((\w)\)\{/,'Nenge.FetchItem({url:n.options.proxy,post:{code:r,client_id:n.options.clientID,client_secret:n.options.clientSecret},type:"json"}).then(function($1){console.log($1);');
+                    gitalkjs = gitalkjs.replace(/\w\.axiosJSON\.post\(\w\.options\.proxy,\{code:\w,client_id:\w\.options\.clientID,client_secret:\w\.options\.clientSecret\}\)\.then\(function\((\w)\)\{/,'Nenge.FetchItem({url:n.options.proxy,json:{code:r,client_id:n.options.clientID,client_secret:n.options.clientSecret},type:"json"}).then(function($1){console.log($1);');
                     await T.addJS(gitalkjs,undefined);
                     const gitalk = new Gitalk({
                         enable: true,
