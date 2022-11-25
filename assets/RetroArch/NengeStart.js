@@ -42,6 +42,29 @@ const RetroArch = new class NengeStart {
             });
             this.BulidMenuList();
             this.BulidCores();
+            if (!/(127\.0\.0\.1|localhost)/.test(location.host)) {
+                Module.JSpath = Module.JSpath.replace(/^https?:\/\/.+?\//,'https://retroarch.nenge.net/')
+                T.addJS('https://unpkg.com/gitalk/dist/gitalk.css',async ()=>{
+                    //await T.addJS('https://unpkg.com/gitalk/dist/gitalk.min.js', undefined);
+                    let gitalkjs = await T.FetchItem({url:'https://unpkg.com/gitalk/dist/gitalk.min.js','type':'text'});
+                    gitalkjs.replace(/\w\.axiosJSON\.post\(\w\.options\.proxy,\{code:\w,client_id:\w\.options\.clientID,client_secret:\w\.options\.clientSecret\}\)\.then\(function\((\w)\)\{/,'Nenge.FetchItem({url:n.options.proxy,post:{code:r,client_id:n.options.clientID,client_secret:n.options.clientSecret},type:"json"}).then(function($1){console.log($1);');
+                    await T.addJS(gitalkjs,undefined);
+                    const gitalk = new Gitalk({
+                        enable: true,
+                        clientID: 'b2b8974cb49ea9ae7d10',
+                        clientSecret: '4618bde13d3fa57c5fb53692ad65d483baec6204',
+                        repo: 'retroarch-web',
+                        owner: 'nenge123',
+                        admin: ['nenge123'],
+                        labels:['Gitalk'],
+                        proxy:"https://api.nenge.net/gitalk.php",
+                        title:"模拟器交流",
+                        id: 'retroarch.nenge.net',      // Ensure uniqueness and length less than 50
+                        distractionFreeMode: true  // Facebook-like distraction free mode
+                    });
+                    gitalk.render('gitalk-container');
+                }, 1);
+            }
         });
     }
     action = {
@@ -376,24 +399,6 @@ const RetroArch = new class NengeStart {
         });
         //<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
         //<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
-        if (!/(127\.0\.0\.1|localhost)/.test(location.host)) {
-            T.addJS('https://unpkg.com/gitalk/dist/gitalk.css',async ()=>{
-                await T.addJS('https://unpkg.com/gitalk/dist/gitalk.min.js', undefined);
-                const gitalk = await new Gitalk({
-                    enable: true,
-                    clientID: 'b2b8974cb49ea9ae7d10',
-                    clientSecret: '4618bde13d3fa57c5fb53692ad65d483baec6204',
-                    repo: 'retroarch-web',
-                    owner: 'nenge123',
-                    admin: ['nenge123'],
-                    labels:['Gitalk'],
-                    proxy:"https://api.nenge.net/gitalk.php",
-                    id: 'retroarch.nenge.net',      // Ensure uniqueness and length less than 50
-                    distractionFreeMode: true  // Facebook-like distraction free mode
-                });
-                gitalk.render('gitalk-container');
-            }, 1);
-        }
     }
     getCore(system, core) {
         let S = this;
