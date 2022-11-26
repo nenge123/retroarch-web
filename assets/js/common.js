@@ -536,7 +536,7 @@ const Nenge = new class NengeCores{
             if(ARG.json){
                 post = ARG.json;
                 delete ARG.json;
-                data.headers['accept'] ="application/json";
+                data.headers['Accept'] ="application/json";
             }
             if(post){
                 data.method = 'POST';
@@ -547,12 +547,12 @@ const Nenge = new class NengeCores{
                 if(/(\+|\/)json/.test(accept)){
                     ARG.type = 'json';
                     data.body = I.toJson(post);
-                    data.headers['Content-Type'] ="application/json;charset="+(F.T.attr('meta[charset]','charset')||'utf-8');
+                    //data.headers['Content-Type'] ="application/json;charset="+(F.T.attr('meta[charset]','charset')||'utf-8');
                 }else{
                     data.body = I.post(post);
                 }
             }else if(ARG.type=='json'){
-                data.headers['accept'] ="application/json";
+                data.headers['Accept'] ="application/json";
             }
             return fetch(url, data).catch(v=>{console.log(v);throw v});
         }
