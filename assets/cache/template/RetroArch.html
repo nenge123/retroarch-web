@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no,width=device-width">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta name="x-content-type-options" content="nosniff" />
+    <meta name="renderer" content="webkit">
+    <title data-lang="">RetroArch WebOS</title>
+    <link rel="stylesheet" href="assets/cache/style/scss_RetroArch.css?1669452597" />
+</head>
+
+<body>
+    <div class="g-header">
+        <div class="container no-select">
+            <div class="MenuBtn" data-click="menu-show">
+                <span class="g-menu-icon"></span>
+            </div>
+            <div class="g-btn-sys SysBtn"></div>
+            <div class="g-btn-addContent"></div>
+            <div class="g-btn-forward" hidden></div>
+            <div class="g-menu-list">
+                <div class="g-list">
+                    <!-- div class="FileMenuBtn">File Manager</div -->
+                    <!--div data-setting="fanyi">翻译设置AI</div -->
+                    <!-- div data-setting="ctrlkey">键位设置ctrlkey</div -->
+                    <!-- div data-setting='record-action'>开始/结束录制start/stop Record</div -->
+                    <!-- div data-setting="help" data-lang="">Help And Teach</div -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="g-main">
+        <div class="container g-start-ui">
+            <div class="system-cores-list"></div>
+            <div id="gitalk-container"></div>
+        </div>
+        <div class="container g-game-ui" hidden>
+            <div class="g-game-welcome">
+                <div class="g-rooms"></div>
+                <div class="g-bios"></div>
+                <div class="g-status"></div>
+                <div class="g-FS-log"></div>
+            </div>
+            <span class="g-btn g-mobile-click" hidden>手机需要再次点击确保音乐正常启动!</span>
+            <div class="game-container no-select">
+                <canvas id="canvas" hidden></canvas>
+                <div class="game-controller">
+                    <div class="g-left"></div>
+                    <div class="g-right"></div>
+                </div>
+                <!--div class="g-game-ctrl" hidden>
+                    <div class="vk" data-key="load_state" data-k="loadstate">即读</div>
+                    <div class="vk" data-key="save_state" data-k="savestate">即存</div>
+                    <div class="vk" data-k="ai" data-click="game-ai">翻译</div>
+                    <div class="vk" data-key="pause_toggle" data-k="stop">暂停</div>
+                    <div class="vk" data-k="save" data-click="game-action-save">存档</div>
+                    <div class="vk" data-key="player1_l" data-k="l">L</div>
+                    <div class="vk" data-key="player1_r" data-k="r">R</div>
+                    <div class="vk" data-key="player1_a" data-k="a">A</div>
+                    <div class="vk" data-key="player1_b" data-k="b">B</div>
+                    <div class="vk" data-key="player1_x" data-k="x"></div>
+                    <div class="vk" data-key="player1_y" data-k="y"></div>
+                    <div class="vk" data-key="player1_select" data-k="select">SELECT</div>
+                    <div class="vk" data-key="player1_start" data-k="start">START</div>
+                    <div class="vk" data-key="player1_left" data-k="left">←</div>
+                    <div class="vk" data-key="player1_right" data-k="right">→</div>
+                    <div class="vk" data-key="player1_up" data-k="up">↑</div>
+                    <div class="vk" data-key="player1_down" data-k="down">↓</div>
+                    <div class="vk" data-key="player1_up,player1_left" data-k="ul"></div>
+                    <div class="vk" data-key="player1_up,player1_right" data-k="ur"></div>
+                    <div class="vk" data-key="player1_down,player1_left" data-k="dl"></div>
+                    <div class="vk" data-key="player1_down,player1_right" data-k="dr"></div>
+                </div -->
+            </div>
+            <div class="g-game-showtxt" hidden></div>
+        </div>
+        <div class="container FileUI" hidden>
+            <div class="g-file-manager no-select">
+            </div>
+            <div class="g-file-editor" hidden>
+                <div class="g-header">
+                    <button class="g-btn g-red" f-action="CloseEdit">CloseEdit</button>
+                    <button class="g-btn g-blue2 g-right" f-action="SavePath">EditPath</button>
+                </div>
+                <div class="g-body">
+                    <div class="g-title">
+                        <label class="g-full"><input tabindex="0" type="text" value="" class="g-file-editor-path"></label>
+                    </div>
+                    <div class="g-content">
+                        <label><textarea title="" placeholder="输入内容" tabindex="1" class="g-file-editor-content"></textarea></label>
+                    </div>
+                </div>
+            </div>
+            <div class="g-file-upload" hidden></div>
+        </div>
+    </div>
+    <div class="add-home-app" hidden>添加到主屏幕/应用</div>
+    <!--script type="text/javascript" src="assets/js/zip.js?<?php echo time();?>"></script -->
+    <script type="text/javascript" src="assets/js/common.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/NengeController.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/NengeFile.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/module.js?<?php echo time();?>"></script>
+    <script type="text/javascript" src="assets/RetroArch/NengeStart.js?<?php echo time();?>"></script>
+</body>
+</html>

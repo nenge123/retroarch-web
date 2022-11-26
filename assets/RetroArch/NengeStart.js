@@ -42,13 +42,21 @@ const RetroArch = new class NengeStart {
             });
             this.BulidMenuList();
             this.BulidCores();
-            //if (!/(127\.0\.0\.1|localhost)/.test(location.host)) {
-                Module.JSpath = Module.JSpath.replace(/^https?:\/\/.+?\//,'https://retroarch.nenge.net/')
-                T.addJS('https://unpkg.com/gitalk/dist/gitalk.css',async ()=>{
+            if (!/(127\.0\.0\.1|localhost)/.test(location.host)) {
+                //Module.JSpath = Module.JSpath.replace(/^https?:\/\/.+?\//,'https://retroarch.nenge.net/')
+                T.FetchItem({url:'https://unpkg.com/gitalk/dist/gitalk.css',type:'text',success:async(csstext,headers)=>{
+                    /**
+                     * @var version 获取gitalk 版本
+                     */
+                    let version = headers.url.match(/@([\d\.]+)/)[1];
+                    await T.addJS(csstext,undefined,1);
                     //await T.addJS('https://unpkg.com/gitalk/dist/gitalk.min.js', undefined);
-                    let gitalkjs = await T.FetchItem({url:'https://unpkg.com/gitalk/dist/gitalk.min.js','type':'text'});
-                    gitalkjs = gitalkjs.replace(/\w\.axiosJSON\.post\(\w\.options\.proxy,\{code:\w,client_id:\w\.options\.clientID,client_secret:\w\.options\.clientSecret\}\)\.then\(function\((\w)\)\{/,'Nenge.FetchItem({url:n.options.proxy,json:{code:r,client_id:n.options.clientID,client_secret:n.options.clientSecret},type:"json",headers:{"Accept": "application/json"}}).then(function($1){console.log($1);$1={data:$1};');
-                    await T.addJS(gitalkjs,undefined);
+                    await T.loadScript('https://unpkg.com/gitalk/dist/gitalk.min.js',version,txt=>{
+                        /**
+                         * 替换获取token处理函数
+                         */
+                        return txt.replace(/\w\.axiosJSON\.post\(\w\.options\.proxy,\{code:\w,client_id:\w\.options\.clientID,client_secret:\w\.options\.clientSecret\}\)\.then\(function\((\w)\)\{/,'Nenge.FetchItem({url:n.options.proxy,json:{code:r,client_id:n.options.clientID,client_secret:n.options.clientSecret}}).then(function($1){console.log($1);$1={data:$1};')
+                    });
                     const gitalk = new Gitalk({
                         enable: true,
                         clientID: 'b2b8974cb49ea9ae7d10',
@@ -58,13 +66,14 @@ const RetroArch = new class NengeStart {
                         admin: ['nenge123'],
                         labels:['Gitalk'],
                         proxy:"https://api.nenge.net/gitalk.php",
+                        //http://pigass.cn/proxy/https://github.com/login/oauth/access_token
                         title:"模拟器交流",
                         id: 'retroarch.nenge.net',      // Ensure uniqueness and length less than 50
                         distractionFreeMode: true  // Facebook-like distraction free mode
                     });
                     gitalk.render('gitalk-container');
-                }, 1);
-            //}
+                }});
+            }
         });
     }
     action = {

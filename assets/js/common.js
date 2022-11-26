@@ -195,8 +195,10 @@ const Nenge = new class NengeCores{
         }
         response = await F.FetchStart(ARG);
         headers = F.FetchHeader(response, ARG);
+        headers.url = response.url;
         let password = headers['password'] || ARG.password || undefined;
         if (response.status == 404) {
+            response.body.cancel();
             ARG.error && ARG.error(response.statusText);
             return callback(result);
         } else if (result && result.filesize && headers["byteLength"] > 0) {
@@ -205,15 +207,21 @@ const Nenge = new class NengeCores{
                 return callback(result);
             }
             result = null;
+        }else if(ARG.type=='head'){
+            console.log(response.url);
+            response.body.cancel();
+            return callback(headers);
         }
         response = ARG.process ? F.StreamResponse(response, ARG) : response;
-        let contents = await response[ARG.type || 'arrayBuffer'](), type = headers.type;let filesize = headers["byteLength"]||contents&&contents.length || 0,filetype = headers['content-type'];
-        if (contents&&contents instanceof ArrayBuffer) {
-            contents = new Uint8Array(contents.buffer || contents);
+        ARG.type = ARG.type || 'arrayBuffer';
+        let contents = await response[ARG.type]();
+        let type = headers.type,filesize = headers["byteLength"]|| 0,filetype = headers['content-type'];
+        if (ARG.type=='arrayBuffer'&&contents instanceof ArrayBuffer) {
+            contents = new Uint8Array(contents);
+            if(ARG.Filter)contents =  ARG.Filter(contents);
             type = 'Uint8Array';
             filesize = contents.byteLength;
         }
-           
         ARG.dataOption = ARG.dataOption||{};
         if (Store && ARG.unpack && key === keyname && filesize > T.maxsize) {
             type = 'unpack';
@@ -221,7 +229,6 @@ const Nenge = new class NengeCores{
             delete ARG.store;
         }
         if (ARG.unpack && I.u8obj(contents)) {
-            if(ARG.Filter)contents =  ARG.Filter(contents);
             contents = await unFile(contents, password);
             if (!contents.byteLength){
                 if(contents.password){
@@ -234,9 +241,11 @@ const Nenge = new class NengeCores{
         if (Store && key !== keyname) {
             if (I.u8obj(contents)) {
                 contents = new File([contents], urlname, {
-                    'type': ARG.mime || headers['type']
+                    'type': ARG.mime || headers['content-type']||F.gettype('')
                 });
                 type = 'File';
+            }else if (I.str(contents)) {
+                type = headers['content-type']||'text';
             } else {
                 let contents2;
                 await Promise.all(I.toArr(contents).map(async entry => {
@@ -328,7 +337,7 @@ const Nenge = new class NengeCores{
         let re = false, script = document.createElement(!iscss ? 'script' : 'link'), func = success => {
             if (!/^(blob:)?https?:\/\//.test(buf) && !/(\.js$|\.css$)/.test(buf)) {
                 re = true;
-                buf = this.F.URL(buf, !iscss ? 'js' : 'css');
+                buf = this.F.URL(buf,this.F.gettype(!iscss ? 'js' : 'css'));
             }
             if (iscss) {
                 script.type = this.F.gettype('css');
@@ -346,11 +355,12 @@ const Nenge = new class NengeCores{
             this.$(!iscss ? 'body' : 'head').appendChild(script);
         };
         if (!cb) return this.THEN((resolve, reject) => func(resolve, reject));
-        else func(cb), script;
+        else return func(cb), script;
 
     };
-    async loadScript(js) {
-        let T = this, F = T.F, url = /^(\/|https?:\/\/|static\/js\/|data\/)/.test(js) ? js : this.JSpath + js, data = await T.FetchItem({ url, store: T.LibStore, key: F.LibKey, mime: F.gettype('js'), version: T.version });
+    async loadScript(js,version,replace) {
+        let T = this, F = T.F, url = /^(\/|https?:\/\/|static\/js\/|data\/)/.test(js) ? js : this.JSpath + js, data = await T.FetchItem({ url, 'store': T.LibStore, 'key': F.LibKey, 'mime': F.gettype('js'), 'version':version||T.version,'type':replace?'text':undefined});
+        replace&&(data = replace(data));
         await T.addJS(data);
         return data;
     }
@@ -433,6 +443,13 @@ const Nenge = new class NengeCores{
         tp(o, val) {
             return typeof o === val;
         }
+        textdecode(u8,charset){
+            return new TextDecoder(charset||'utf8').decode(u8);
+        }
+        toJson(post){
+            if(this.u8obj(post))post = this.textdecode(post);
+            return JSON.stringify( typeof post =='string'?(new Function('return '+post))():post);
+        }
         constructor(T) {
             let I = this;
             I.toArr({
@@ -502,24 +519,42 @@ const Nenge = new class NengeCores{
                 }
             });
             return Object.assign(headers, {
-                'byteLength': Number(headers['content-length']) || 0, 'password': headers['password'] || headers['content-password'], 'type': headers['type'] || headers['content-type'].split('/')[0],
+                'byteLength': Number(headers['content-length']) || 0, 
+                'password': headers['password'] || headers['content-password'], 
+                'type': headers['type'] || headers['content-type'].split('/')[1].split('+')[0],
             });
         }
         FetchStart(ARG) {
-            let F = this, I = F.I, { url, get, post } = ARG || {}, data = {};
-            url = I.get(ARG.url, get);
+            let F = this, I = F.I, { url, get, post} = ARG || {}, data = {};
+            url = I.get(ARG.url, get);data.headers={};
             ['headers', 'context', 'referrer', 'referrerPolicy', 'mode', 'credentials', 'redirect', 'integrity', 'cache'].forEach(val => {
                 if (ARG[val] != undefined) data[val] = ARG[val];
             });
-            if (post) {
-                data.method = 'POST';
-                data.body = I.post(post);
-            }else if(ARG.json){
-                
-                data.method = 'POST';
-                data.body = typeof ARG.json =='string'?ARG.json:JSON.stringify(ARG.json);
+            /**
+             * @var post 表单数据 
+             */
+            if(ARG.json){
+                post = ARG.json;
+                delete ARG.json;
+                data.headers['accept'] ="application/json";
             }
-            return fetch(url, data);
+            if(post){
+                data.method = 'POST';
+                /**
+                 * @var accent:mixed 发送JSON数据
+                 */
+                let accept = (data.headers['accept'] || data.headers['Accept']||'').toLowerCase();
+                if(/(\+|\/)json/.test(accept)){
+                    ARG.type = 'json';
+                    data.body = I.toJson(post);
+                    data.headers['Content-Type'] ="application/json;charset="+(F.T.attr('meta[charset]','charset')||'utf-8');
+                }else{
+                    data.body = I.post(post);
+                }
+            }else if(ARG.type=='json'){
+                data.headers['accept'] ="application/json";
+            }
+            return fetch(url, data).catch(v=>{console.log(v);throw v});
         }
         THEN = f => new Promise(f);
         async unRAR(u8, ARG) {
@@ -1166,6 +1201,8 @@ const Nenge = new class NengeCores{
         });
     }
     attr(e, s) {
+        let elm = this.$(e);
+        if(!elm) return ;
         return this.$(e).getAttribute(s);
     }
     docElm(str, mime) {
