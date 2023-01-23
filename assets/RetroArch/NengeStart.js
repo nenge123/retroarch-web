@@ -75,12 +75,9 @@ const RetroArch = new class NengeStart {
                         let version = headers.url.match(/@([\d\.]+)/)[1];
                         await T.addJS(csstext, undefined, 1);
                         //await T.addJS('https://unpkg.com/gitalk/dist/gitalk.min.js', undefined);
-                        await T.loadScript('https://unpkg.com/gitalk/dist/gitalk.min.js', version, txt => {
-                            /**
-                             * 替换获取token处理函数
-                             */
-                            return txt.replace(/\w\.axiosJSON\.post\(\w\.options\.proxy,\{code:\w,client_id:\w\.options\.clientID,client_secret:\w\.options\.clientSecret\}\)\.then\(function\((\w)\)\{/, 'Nenge.FetchItem({url:n.options.proxy,json:{code:r,client_id:n.options.clientID,client_secret:n.options.clientSecret}}).then(function($1){console.log($1);$1={data:$1};')
-                        });
+                        let txt = await T.loadScript('https://unpkg.com/gitalk/dist/gitalk.min.js',{version},1);
+                        txt = txt.replace(/\w\.axiosJSON\.post\(\w\.options\.proxy,\{code:\w,client_id:\w\.options\.clientID,client_secret:\w\.options\.clientSecret\}\)\.then\(function\((\w)\)\{/, 'Nenge.FetchItem({url:n.options.proxy,json:{code:r,client_id:n.options.clientID,client_secret:n.options.clientSecret}}).then(function($1){console.log($1);$1={data:$1};');
+                        await T.addJS(txt);
                         const gitalk = new Gitalk({
                             enable: true,
                             clientID: 'b2b8974cb49ea9ae7d10',
@@ -89,7 +86,7 @@ const RetroArch = new class NengeStart {
                             owner: 'nenge123',
                             admin: ['nenge123'],
                             labels: ['Gitalk'],
-                            proxy: "https://api.nenge.net/gitalk.php",
+                            //proxy: "https://api.nenge.net/gitalk.php",
                             //http://pigass.cn/proxy/https://github.com/login/oauth/access_token
                             title: "模拟器交流",
                             id: 'retroarch.nenge.net',      // Ensure uniqueness and length less than 50
