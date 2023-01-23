@@ -31,6 +31,7 @@ class NengeController{
         T.on(window, 'resize', () => this.runaction('ReSizeCanvas'));
     }
     checkLog(text){
+        console.log(text);
         if (/Video\s@\s\d+x\d+\.?\s*$/.test(text) || /Set\s?video\s?size\s?to:\s?\d+x\d+\s?\.?\s?/.test(text)) {
             let wh = text.match(/\d+/g);
             this.runaction('ReSizeCanvas',[wh]);
@@ -118,6 +119,7 @@ class NengeController{
                     righthtml +=  C.runaction('getButton',['right',btn]);
                 }
             });
+            lefthtml +='<button class="g-menu">Menu</button>';
             lefthtml +='<div class="g-dp">'+C.runaction('getArrow')+'</div>';
             righthtml +='<div class="g-dp">'+C.runaction('getXYAB')+'</div>';
             leftContent.innerHTML=lefthtml;
@@ -125,10 +127,10 @@ class NengeController{
             let touchlist = [];
             T.stopGesture(T.$('.game-controller'));
             T.stopGesture(Module.canvas);
-            Nttr('.game-controller').on('contextmenu', e => T.stopProp(e));
+            BtnContent.on('contextmenu', e => T.stopProp(e));
             ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(
                 evt => {
-                    Nttr('.game-controller').on(evt, e => {
+                    BtnContent.on(evt, e => {
                         let newlist = [];
                         if (e.type == 'touchstart') {
                             newlist = touchlist.concat(C.runaction('getButtonKey',[e.target]));
@@ -151,9 +153,27 @@ class NengeController{
                         passive: false
                     });
                 }
-            )
+            );
+            let menulist = Nttr('.game-controller .g-menulist'),menubtn = Nttr('.game-controller .g-menu');
+            menubtn.click(e=>{
+                let elm = e.target,active = menulist.hidden;
+                menubtn.active = active;
+                menulist.hidden = !active;
+                return T.stopProp(e);
+            },'pointerup',{passive:false});
+            menulist.click(e=>{
+                C.runaction('CallMenu',[e.target,menulist]);
+                return T.stopProp(e);
+            });
+            C.runaction('BulidMenu',[BtnContent,leftContent]);
             //Nttr('.game-controller')
             //400x400
+        },
+        CallMenu(elm){
+
+        },
+        BulidMenu(BtnContent,leftContent){
+
         },
         sendInputKey(touchlist,newlist){
             let C=this,T=C.T,I=C.I,Module = T.Module;
@@ -241,7 +261,11 @@ class NengeController{
                         Nttr('.game-controller').css = "";
                     }else{
                         AspectRatio = C.AspectRatio;
-                        Nttr('.game-controller').css = "height:"+(opt.height - opt.width/AspectRatio-20)+'px;';
+                        let mt=0,h=opt.height - opt.width/AspectRatio-20,height = Math.min(h,400);
+                        if(h-50>height){
+                            mt = h-50-height;
+                        }
+                        Nttr('.game-controller').css = 'height:'+height+'px;margin-top:'+mt+'px';
                     }
                     Module.setCanvasSize(QualityHeight*AspectRatio,QualityHeight);
                     C.runaction('ReSizeCtrl',[opt,Module.canvas.getBoundingClientRect().height]);

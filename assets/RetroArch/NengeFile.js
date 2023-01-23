@@ -17,16 +17,19 @@ class NengeFile{
                 return;
             }
             this.btn.click();
-            this.runaction('ResultWrite',['data-info']);
+            this.runaction('ResultWrite',[T.Module.DB.info.table]);
         })
         this.runaction = T.runaction;
-        this.content = Nttr('.FileUI').click(e=>{
+        this.obj = Nttr('.FileUI').click(e=>{
             let elm = e.target;
             if(elm instanceof Element){
                 let action = T.attr(elm,'f-action');
                 action&&this.runaction(action,[elm]);
             }
         });
+        ['keyup','keydown','keypress','wheel'].forEach(v=>this.obj.on(v,e=>{
+            e.stopPropagation();
+        },{passive:false}));
         this.btn.html(T.getLang(this.btn.html()));
     }
     async install(){
@@ -66,9 +69,9 @@ class NengeFile{
             let ok = confirm(T.getLang('AreYouClear?'));
             if(ok){
                 await Store.clear();
-                if (dbname == 'data-info'){
-                    await T.getStore('data-rooms').clear();
-                    Nttr('.FileResult[d-db="data-rooms"]').html('');
+                if (dbname == T.Module.DB.info.table){
+                    await T.Module.DB.rooms.clear();
+                    Nttr('.FileResult[d-db="'+T.Module.DB.rooms.table+'"]').html('');
                 }
                 Nttr('.FileResult[d-db="'+dbname+'"]').html('');
 
@@ -79,9 +82,9 @@ class NengeFile{
         ResultRead(elm){
             let T=this.T,dbname = elm instanceof Element?T.attr(elm.parentNode,'d-db'):elm,relm = Nttr('.FileResult[d-db="'+dbname+'"]');
             relm.hidden = false;
-            if (dbname == 'data-info') {
+            if (dbname == T.Module.DB.info.table) {
                 return this.runaction('ResultShowInfo',[relm,dbname]);
-            }else if(['userdata','retroarch'].includes(dbname)){
+            }else if([T.Module.DB.userdata.table,T.Module.DB.retroarch.table].includes(dbname)){
                 return this.runaction('ResultShowFSdata',[relm,dbname])
             }
             return this.runaction('ResultShowData',[relm,dbname]);
@@ -91,7 +94,7 @@ class NengeFile{
             relm&&(relm.hidden = true);
             Nttr('.FileUI').hidden = false;
             Nttr('.g-file-upload').hidden = false;
-            if(dbname=='data-rooms')dbname = 'data-info';
+            if(dbname==T.Module.DB.rooms.table)dbname = T.Module.DB.info.table;
             Nttr('.g-file-upload').html(this.uploadHtml(dbname));
 
         },
@@ -117,18 +120,20 @@ class NengeFile{
             let ok = confirm(T.getLang('AreYouRemove?'));
             if(ok){
                 await Store.remove(Itemname,opt);
-                if (dbname == 'data-info'){
-                    await T.getStore('data-rooms').remove(Itemname,opt);
-                    Nttr('.FileResult[d-db="data-rooms"]').html('');
+                if (dbname == T.Module.DB.info.table){
+                    await T.Module.DB.rooms.remove(Itemname,opt);
+                    Nttr('.FileResult[d-db="'+T.Module.DB.rooms.table+'"]').html('');
                 }
                 Nttr('.FileResult[d-db="'+dbname+'"]').html('');
             }
 
         },
         async ResultDownloadItem(elm) {
-            let T = this.T, pelm = elm.parentNode.parentNode, dbname = T.attr(pelm, 'd-db'), Itemname = T.attr(elm, 'd-name'), Store = T.getStore(dbname),name=T.F.getname(Itemname);
-            if (dbname == 'data-info') Store = T.getStore('data-rooms');
-            if (['data-rooms', 'data-libjs', 'userdata', 'retroarch']) T.down(name, await Store.data(Itemname));
+            let T = this.T, pelm = elm.parentNode.parentNode,DB = T.Module.DB, dbname = T.attr(pelm, 'd-db'), Itemname = T.attr(elm, 'd-name'), Store = T.getStore(dbname),name=T.F.getname(Itemname);
+            if (dbname == T.Module.DB.info.table) Store = T.Module.DB.rooms;
+            if (T.I.toArr(DB).includes(Itemname)){
+                T.down(name, await Store.data(Itemname));
+            }
             else {
                 let result = await Store.get(Itemname);
                 T.down(name, result && result.contents || result);
@@ -191,7 +196,7 @@ class NengeFile{
         },
         async ResultShowFSdata(relm,dbname){
             let T=this.T,I=T.I,Store = T.getStore(dbname),rangeKey = '/userdata/';
-            if(dbname=='retroarch') rangeKey = '/home/web_user/retroarch/userdata/';
+            if(dbname==T.Module.DB.retroarch.table) rangeKey = '/home/web_user/retroarch/userdata/';
             this.runaction('ShowFsPath',[relm,Store,rangeKey]);
         },
         async ShowFsPath(ul,Store,rangeKey){
@@ -298,10 +303,10 @@ class NengeFile{
         }
         let key = sys+'-'+filename;
         contents.contents = u8;
-        await T.getStore('data-rooms').put(key,contents);
+        await T.Module.DB.rooms.put(key,contents);
         udiv&&udiv.addChild(this.createItem('div',T.getLang('FileWriteToRooms')+':'+filename));
         delete contents.contents;
-        await T.getStore('data-info').put(key,contents);
+        await T.Module.DB.info.put(key,contents);
         udiv&&udiv.addChild(this.createItem('div',T.getLang('FileWriteToInfo')+':'+filename));
        }
     }
@@ -341,13 +346,20 @@ class NengeFile{
         return elm;
     }
     addRunItem(ufile,udata){
-        let T=this.T,result = T.$('.g-game-welcome-result'),path = T.Module.fsDisk.WriteRooms(ufile,udata);
+        let T=this.T,result = T.$('.g-game-welcome-result'),path = this.WriteToRooms(ufile,udata);
         if(result){
             let li = T.$ce('div');
             li.innerHTML = `<h3>${path}</h3><button class="g-btn" data-name="${path}" data-type="down">${T.getLang('Download?')}</button><button class="g-btn" data-name="${path}" data-type="run">${T.getLang('Run?')}</button>`;
             result.appendChild(li);
 
         }
+    }
+    WriteToRooms(path, data) {
+        let T=this.T,FSPATH = T.Module.FSPATH;
+        if (FSPATH&&FSPATH.rooms) path = FSPATH.rooms;
+        else path = '/rooms/' + T.F.getname(path);
+        T.FSWRITE(path, data, true);
+        return path;
     }
     CoreName = {
         'gb':'GB/GBC',
@@ -382,7 +394,7 @@ class NengeFile{
     };
     uploadHtml(dbname){
         let T=this.T,I=T.I,html = ``;
-        if(dbname=='data-info'){
+        if(dbname==T.Module.DB.info.table){
             html += `<h3>${T.getLang('CoreSystemName')}</h3><ul>`;
             I.toArr(this.CoreName,entry=>{
                 html+=`<li><button class="g-btn g-blue" f-action="WriteRooms" f-sys="${entry[0]}">${entry[1]}</button></li>`;
@@ -392,14 +404,6 @@ class NengeFile{
             html += `<h3>${T.getLang('What\'s your do?')}</h3><lable><span>${T.getLang('UploadName')}</span><input type="text" class="upload-runfile"></lable><p><button class="g-btn g-blue" f-action="WriteRunFile" f-db="${dbname}">${T.getLang('WriteTable')}</button></p>`;
         }
         return html;
-        /**
-         *  = {
-        'data-info':``,
-        'user':``,
-        'data-info':``,
-        'data-info':``,
-    }
-         */
     }
     upload(func,bool){
         let input = this.T.$ce('input');
@@ -417,7 +421,7 @@ class NengeFile{
     async WriteRoomsFile(fileBlob,system,bool){
         let T=this.T,contents = new Uint8Array(await fileBlob.arrayBuffer()),file=[fileBlob.name],filename=fileBlob.name,type='Uint8Array',filetype=fileBlob.type,filesize=contents.byteLength;
         if(bool){
-            T.Module.fsDisk.MKFILE('/rooms/'+filename,contents,1);
+            T.Module.FSWRITE('/rooms/'+filename,contents,1);
         }
         let data = {
             contents,
@@ -429,13 +433,20 @@ class NengeFile{
             timestamp:T.date,
             version:T.version
         };
-        await T.setItem('data-rooms',filename,data);
+        await T.Module.DB.rooms.put(filename,data);
         delete data.contents;
-        await T.setItem('data-info',filename,data);
+        await T.Module.DB.info.put(filename,data);
     }
     async BIOS_download(url,system,elm,func){
         let T = this.T;
-        return func(await T.FetchItem({url,key:system+'-'+T.F.getname(url),unpack:true,process:e=>elm&&(elm.innerHTML=e),dataOption:{system},store:'data-bios'}));
+        return func(await T.FetchItem({
+            url,
+            key:system+'-'+T.F.getname(url),
+            unpack:true,
+            process:e=>elm&&(elm.innerHTML=e),
+            dataOption:{system},
+            store:T.Module.DB.bios
+        }));
     }
     async BIOS_unpack(system,func){
         let T = this.T;
@@ -443,7 +454,7 @@ class NengeFile{
             Array.from(files).forEach(async file=>{
                 let elm = func(file.name);
                 let contents = await T.unFile(file,status=>elm&&(elm.innerHTML=status));
-                await T.setItem('data-bios',system+'-'+file.name,{
+                await T.Module.DB.bios.put(system+'-'+file.name,{
                     contents,
                     system,
                     type:contents instanceof Uint8Array ? 'Uint8Array':'datalist',
@@ -459,7 +470,7 @@ class NengeFile{
             Array.from(files).forEach(async file=>{
                 let elm = func(file.name);
                 let contents = new Uint8Array(await file.arrayBuffer());
-                await T.setItem('data-bios',system+'-'+file.name,{
+                await T.Module.DB.bios.put(system+'-'+file.name,{
                     contents,
                     system,
                     type:'Uint8Array',
@@ -485,10 +496,10 @@ class NengeFile{
                     timestamp:T.date,
                     version:T.version
                 };
-                await T.setItem('data-rooms',key,data);
+                await T.Module.DB.rooms.put(key,data);
                 func&&func(fileItem.name,contents);
                 delete data.contents;
-                await T.setItem('data-info',key,data);
+                await T.Module.DB.info.put(key,data);
                 data = null;
             });
         });
@@ -525,13 +536,50 @@ class NengeFile{
                 }else{
                     func&&func(fileItem.name,contents);
                 }
-                await T.setItem('data-rooms',key,data);
+                await T.Module.DB.rooms.put(key,data);
                 delete data.contents;
-                await T.setItem('data-info',key,data);
+                await T.Module.DB.info.put(key,data);
                 elm&&(elm.innerHTML= '<b>'+T.getLang('indexDB Cache')+':</b>'+key+'&nbsp;'+T.getLang('is write!'));
                 data = null;
             });
         });
+    }
+    async Rooms_down(url,system,func){
+        let T = this.T,filename=T.F.getname(url);
+        let elm = func&&func(url);
+        let contents = await T.FetchItem({url}),
+            file=[filename],type='Uint8Array',filetype=T.F.gettype(''),filesize=contents.byteLength,key=system+'-'+filename;
+        let data = {
+            contents,
+            file,
+            filesize,
+            filetype,
+            type,
+            system,
+            timestamp:T.date,
+            version:T.version
+        };
+        let unpack = await T.unFile(contents,status=>elm&&(elm.innerHTML=status),{filename});
+        if(!T.I.u8obj(unpack)){
+            data.type='unpack';
+            if(unpack.password){
+                data.password = unpack.password;
+                delete unpack.password;
+            }
+            data.file = [];
+            T.I.toArr(unpack,entry=>{
+                data.file.push(entry[0]);
+                func&&func(entry[0],entry[1]);
+            });
+            unpack = null;
+        }else{
+            func&&func(filename,contents);
+        }
+        await T.Module.DB.rooms.put(key,data);
+        delete data.contents;
+        await T.Module.DB.info.put(key,data);
+        elm&&(elm.innerHTML= '<b>'+T.getLang('indexDB Cache')+':</b>'+key+'&nbsp;'+T.getLang('is write!'));
+        data = null;
     }
 
 }

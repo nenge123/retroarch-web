@@ -23,7 +23,7 @@ class NengeModule {
     }
     action = {};
     __autoSet() {
-        let T = Nenge, I = T.is;
+        let T = Nenge, I = T.I;
         I.defines(this, { T, I }, 1);
     }
     FetchItem(ARG) {
@@ -120,8 +120,9 @@ class NengeModule {
             `;((m,n)=>{
                     m.FS = FS,m.GL = GL,m.SYSCALLS = SYSCALLS,m.RA = RA;
                     if(!m.HEAP8)m.HEAP8 = HEAP8;
-                    m.replaceFS(n,FS||m.FS,HEAP8||m.HEAP8);
-                    m.run=run;
+                    if(!m.run)m.run=run;
+                    if(!FS.filesystems||!FS.filesystems.MEMFS)FS.filesystems.MEMFS = MEMFS;
+                    m.replaceWrite();
                 })(Module,MEMFS);`
         ).replace(
             /eventHandler\.useCapture\s?\)/,
@@ -129,17 +130,29 @@ class NengeModule {
         ).replace(
             /return\s?WebAssembly\.instantiate\(binary,\s?info\)/,
             'return WebAssembly.instantiate(binary, info).catch(e=>alert(JSON.stringify(e)))'
+        ).replace(
+            /function\s?_emscripten_set_main_loop_timing\(mode,\s?value\)\s?\{/,
+            "function _emscripten_set_main_loop_timing(mode, value) {if(mode!=1){alert(mode)};console.log('动画运行:'+mode);"
         );
     }
-    replaceFS(MEMFS, FS, HEAP8) {
-        this.fsDisk = new NengeDisk({ MEMFS, FS, HEAP8, 'Module': this });
+    get DFS(){
+        return this.FSDISK;
     }
-    replaceDisk(path) {
+    replaceWrite(){
+        return this.DFS.replaceWrite();
+    }
+    getMountStatus(){
+        return this.DFS.mountReady();
+    }
+    addMount(path) {
         let FS = this.FS;
         if (!FS.analyzePath(path).exists) {
             FS.createPath('/', path, !0, !0);
         }
-        FS.mount(this.fsDisk, {}, path);
+        FS.mount(this.DFS, {}, path);
+    }
+    FSWRITE(path, data, bool){
+        return this.DFS.MKFILE(path, data, bool);
     }
     locateFile(path) {
         let M = this, T = M.T;
@@ -632,379 +645,377 @@ class NengeModule {
         'mame2003': ['zip'],
         'mame': ['zip']
     }
-};
-class NengeDisk {
-    constructor(Obj) {
-        if (!this.I) this.__autoSet();
-        let D = this, T = D.T, I = D.I;
-        I.defines(this, Obj, 1);
-        D.speed = T.speed;
-        D.MEMFS.stream_ops.write = D.ops_write;
-        if (D.MEMFS.ops_table) D.MEMFS.ops_table.file.stream.write = D.ops_write;
-        D.StoreMap = {
-            '/userdata': T.getStore('userdata'),
-            '/home/web_user/retroarch/userdata': T.getStore('retroarch'),
+    FSDISK = new class NengeDisk {
+        constructor(Module) {
+            if (!this.I) this.__autoSet();
+            let D = this, T = Module.T, I = T.I;
+            I.defines(this, {Module}, 1);
+            D.speed = T.speed;
+            D.runaction = T.runaction;
         }
-        D.runaction = T.runaction;
-    }
-    action = {};
-    StoreMap = {};
-    __autoSet() {
-        let T = Nenge, I = T.is;
-        I.defines(this, { T, I }, 1);
-    }
-    getStore(mount) {
-        let path = mount.mountpoint || mount;
-        if (!this.StoreMap[path]) {
-            this.StoreMap[path] = this.T.getStore(path);
+        action = {};
+        __autoSet() {
+            let T = Nenge, I = T.I;
+            I.defines(this, { T, I }, 1);
         }
-        return this.StoreMap[path];
-    }
-    mount(mount) {
-        let M = this;
-        if (!M.FS.analyzePath(mount.mountpoint).exists) {
-            M.FS.createPath('/', mount.mountpoint, !0, !0);
+        replaceWrite(){
+            let D = this;
+            D.MEMFS.stream_ops.write = D.ops_write;
+            if (D.MEMFS.ops_table) D.MEMFS.ops_table.file.stream.write = D.ops_write;
         }
-        let len = mount.mountpoint.split('/').length;
-        let node = M.MEMFS.createNode(len < 3 ? M.FS.root : null, len < 3 ? mount.mountpoint.split('/').pop() : mount.mountpoint.replace(/^\//, ''), 16384 | 511, 0);
-        if (M.getStore(mount)) {
-            if (!M.__mount) M.__mount = [];
-            M.__mount.push(M.syncfs(mount, txt => M.Module.runaction('DiskReadyOut', [txt])));
+        get FS(){
+            return this.Module.FS;
         }
-        return node;
-    }
-    mountReady() {
-        return Promise.all(this.__mount || []);
-    }
-    async syncfs(mount, callback, error) {
-        let M = this;
-        callback = error instanceof Function ? error : callback;
-        let store = M.getStore(mount);
-        let result;
-        if (!mount.isReady) {
-            result = await M.writeToFS(store);
-        } else {
-            result = await M.syncWrite(store, mount);
+        get MEMFS(){
+            return this.Module.FS.filesystems.MEMFS;
         }
-        mount.isReady = true;
-        (callback instanceof Function) && callback(result);
-        return result;
-    }
-    async writeToFS(store) {
-        let M = this, I = M.I;
-        return I.toArr(await store.all(true)).map(entry => M.storeLocalEntry(entry[0], entry[1])).join("\n");
-    }
-    async syncWrite(store, mount) {
-        let M = this, I = M.I,
-            IsReady = mount.isReady,
-            local = M.getLocalSet(mount),
-            remote = await M.getRemoteSet(store),
-            src = (IsReady ? local : remote).entries || {},
-            dst = (!IsReady ? local : remote).entries || {};
-        let result = await Promise.all(I.toArr(src).filter(entry => {
-            if (!entry[1]) return '';
-            let path = entry[0],
-                e2 = dst[path];
-            if (!e2 || entry[1].timestamp > e2.timestamp) {
-                return true;
+        get HEAP8(){
+            return this.Module.HEAP8;
+        }
+        getStore(mount) {
+            let M=this,T=M.T,DB = M.Module.DB,path = mount.mountpoint || mount;
+            if (!DB[path]) {
+                DB[path] = T.getStore(path);
             }
-            return false;
-
-        }).map(entry => entry[0]).sort().map(async path => {
-            if (!IsReady) {
-                let contents = await store.get(path);
-                if (contents) {
-                    return M.storeLocalEntry(path, contents);
-                }
+            return DB[path];
+        }
+        mount(mount) {
+            let M = this;
+            if (!M.FS.analyzePath(mount.mountpoint).exists) {
+                M.FS.createPath('/', mount.mountpoint, !0, !0);
+            }
+            let len = mount.mountpoint.split('/').length;
+            let node = M.MEMFS.createNode(len < 3 ? M.FS.root : null, len < 3 ? mount.mountpoint.split('/').pop() : mount.mountpoint.replace(/^\//, ''), 16384 | 511, 0);
+            if (M.getStore(mount)) {
+                if (!M.__mount) M.__mount = [];
+                M.__mount.push(M.syncfs(mount, txt => M.Module.runaction('DiskReadyOut', [txt])));
+            }
+            console.log(node);
+            return node;
+        }
+        mountReady() {
+            return Promise.all(this.__mount || []);
+        }
+        async syncfs(mount, callback, error) {
+            let M = this;
+            callback = error instanceof Function ? error : callback;
+            let store = M.getStore(mount);
+            let result;
+            if (!mount.isReady) {
+                result = await M.writeToFS(store);
             } else {
-                let contents = M.loadLocalEntry(path);
-                if (contents) {
-                    await store.put(path, contents);
-                    return 'DB saved:' + path;
+                result = await M.syncWrite(store, mount);
+            }
+            mount.isReady = true;
+            (callback instanceof Function) && callback(result);
+            return result;
+        }
+        async writeToFS(store) {
+            let M = this, I = M.I;
+            return I.toArr(await store.all(true)).map(entry => M.storeLocalEntry(entry[0], entry[1])).join("\n");
+        }
+        async syncWrite(store, mount) {
+            let M = this, I = M.I,
+                IsReady = mount.isReady,
+                local = M.getLocalSet(mount),
+                remote = await M.getRemoteSet(store),
+                src = (IsReady ? local : remote).entries || {},
+                dst = (!IsReady ? local : remote).entries || {};
+            let result = await Promise.all(I.toArr(src).filter(entry => {
+                if (!entry[1]) return '';
+                let path = entry[0],
+                    e2 = dst[path];
+                if (!e2 || entry[1].timestamp > e2.timestamp) {
+                    return true;
                 }
-            }
-        }));
-        result.concat(await Promise.all(I.toArr(dst).filter(entry => {
-            if (!entry[1]) return '';
-            let e2 = src[entry[0]],
-                path = entry[0];
-            if (!e2 || entry[1].timestamp > e2.timestamp) {
-                return true;
-            }
-            return false;
-
-        }).map(entry => entry[0]).sort().map(async path => {
-            let msg = '';
-            if (!IsReady) {
-                M.removeLocalEntry(path);
-                msg = 'FS remove:';
+                return false;
+    
+            }).map(entry => entry[0]).sort().map(async path => {
+                if (!IsReady) {
+                    let contents = await store.get(path);
+                    if (contents) {
+                        return M.storeLocalEntry(path, contents);
+                    }
+                } else {
+                    let contents = M.loadLocalEntry(path);
+                    if (contents) {
+                        await store.put(path, contents);
+                        return 'DB saved:' + path;
+                    }
+                }
+            }));
+            result.concat(await Promise.all(I.toArr(dst).filter(entry => {
+                if (!entry[1]) return '';
+                let e2 = src[entry[0]],
+                    path = entry[0];
+                if (!e2 || entry[1].timestamp > e2.timestamp) {
+                    return true;
+                }
+                return false;
+    
+            }).map(entry => entry[0]).sort().map(async path => {
+                let msg = '';
+                if (!IsReady) {
+                    M.removeLocalEntry(path);
+                    msg = 'FS remove:';
+                } else {
+                    await store.remove(path, true);
+                    msg = 'DB remove:';
+                }
+                return msg + entry[0];
+            })));
+            M.Module.runaction('indexdb-sync', [IsReady, result]);
+            return result.join("\n");
+        }
+        loadLocalEntry(path) {
+            let M = this, FS = M.FS,
+                stat, node;
+            if (FS.analyzePath(path).exists) {
+                var lookup = FS.lookupPath(path);
+                node = lookup.node;
+                stat = FS.stat(path)
             } else {
-                await store.remove(path, true);
-                msg = 'DB remove:';
+                return path + ' is exists'
             }
-            return msg + entry[0];
-        })));
-        M.Module.runaction('indexdb-sync', [IsReady, result]);
-        return result.join("\n");
-    }
-    loadLocalEntry(path) {
-        let M = this, FS = M.FS,
-            stat, node;
-        if (FS.analyzePath(path).exists) {
-            var lookup = FS.lookupPath(path);
-            node = lookup.node;
-            stat = FS.stat(path)
-        } else {
-            return path + ' is exists'
-        }
-        if (FS.isDir(stat.mode)) {
-            return {
-                timestamp: stat.mtime,
-                mode: stat.mode
-            };
-        } else if (FS.isFile(stat.mode)) {
-            node.contents = M.getFileDataAsTypedArray(node);
-            return {
-                timestamp: stat.mtime,
-                mode: stat.mode,
-                contents: node.contents
-            };
-        } else {
-            return "node type not supported";
-        }
-    }
-    storeLocalEntry(path, entry) {
-        let M = this, T = M.T, FS = M.FS
-        if (FS.isDir(entry.mode)) {
-            !FS.analyzePath(path).exists && FS.createPath('/', path, !0, !0)
-        } else if (FS.isFile(entry.mode)) {
-            let p = path && path.split('/').slice(0, -1).join('/');
-            if (p && !FS.analyzePath(p).exists) FS.createPath('/', p, !0, !0);
-            FS.writeFile(path, entry.contents, {
-                canOwn: true,
-                encoding: "binary"
-            });
-        } else {
-            T.Err("node type not supported");
-        }
-        FS.chmod(path, entry.mode);
-        FS.utime(path, entry.timestamp, entry.timestamp);
-        return 'FS write:' + path;
-    }
-    removeLocalEntry(path) {
-        let FS = this.FS;
-        if (FS.analyzePath(path).exists) {
-            var stat = FS.stat(path);
             if (FS.isDir(stat.mode)) {
-                FS.rmdir(path)
+                return {
+                    timestamp: stat.mtime,
+                    mode: stat.mode
+                };
             } else if (FS.isFile(stat.mode)) {
-                FS.unlink(path)
+                node.contents = M.getFileDataAsTypedArray(node);
+                return {
+                    timestamp: stat.mtime,
+                    mode: stat.mode,
+                    contents: node.contents
+                };
+            } else {
+                return "node type not supported";
             }
-            return 'FS unlink:' + path;
-        } else {
-            return path + 'is not exists';
         }
-    }
-    async getRemoteSet(store, callback) {
-        let remote = {
-            'type': "remote",
-            store,
-            entries: await store.cursor('timestamp', true)
-        };
-        callback && callback(remote);
-        return remote;
-    }
-    getLocalSet(mount, callback) {
-        let M = this, T = M.T;
-        if (!mount) T.Err('mount:PATH ERROR');
-        let result = {
-            "type": "local",
-            entries: M.getLocalList(mount.mountpoint)
-        };
-        callback && callback(result);
-        return result
-    }
-    getLocalList(mountpoint) {
-        mountpoint = mountpoint || '/';
-        let M = this, T = M.T, FS = M.FS,
-            entries = {},
-            filterRoot = [".", ".."].concat(mountpoint == '/' ? ["dev", "tmp", "proc"] : []),
-            isRealDir = p => !filterRoot.includes(p),
-            toAbsolute = root => p => M.join2(root, p),
-            check = M.stat(mountpoint) && FS.readdir(mountpoint).filter(isRealDir).map(toAbsolute(mountpoint));
-        if (!check) T.Err('mount:PATH ERROR');
-        while (check.length) {
-            let path = check.pop();
-            let stat = M.stat(path);
-            if (stat) {
+        storeLocalEntry(path, entry) {
+            let M = this, T = M.T, FS = M.FS
+            if (FS.isDir(entry.mode)) {
+                !FS.analyzePath(path).exists && FS.createPath('/', path, !0, !0)
+            } else if (FS.isFile(entry.mode)) {
+                let p = path && path.split('/').slice(0, -1).join('/');
+                if (p && !FS.analyzePath(p).exists) FS.createPath('/', p, !0, !0);
+                FS.writeFile(path, entry.contents, {
+                    canOwn: true,
+                    encoding: "binary"
+                });
+            } else {
+                T.Err("node type not supported");
+            }
+            FS.chmod(path, entry.mode);
+            FS.utime(path, entry.timestamp, entry.timestamp);
+            return 'FS write:' + path;
+        }
+        removeLocalEntry(path) {
+            let FS = this.FS;
+            if (FS.analyzePath(path).exists) {
+                var stat = FS.stat(path);
                 if (FS.isDir(stat.mode)) {
-                    check.push.apply(check, FS.readdir(path).filter(isRealDir).map(toAbsolute(path)))
+                    FS.rmdir(path)
+                } else if (FS.isFile(stat.mode)) {
+                    FS.unlink(path)
                 }
-                entries[path] = {
-                    timestamp: stat.mtime
+                return 'FS unlink:' + path;
+            } else {
+                return path + 'is not exists';
+            }
+        }
+        async getRemoteSet(store, callback) {
+            let remote = {
+                'type': "remote",
+                store,
+                entries: await store.cursor('timestamp', true)
+            };
+            callback && callback(remote);
+            return remote;
+        }
+        getLocalSet(mount, callback) {
+            let M = this, T = M.T;
+            if (!mount) T.Err('mount:PATH ERROR');
+            let result = {
+                "type": "local",
+                entries: M.getLocalList(mount.mountpoint)
+            };
+            callback && callback(result);
+            return result
+        }
+        getLocalList(mountpoint) {
+            mountpoint = mountpoint || '/';
+            let M = this, T = M.T, FS = M.FS,
+                entries = {},
+                filterRoot = [".", ".."].concat(mountpoint == '/' ? ["dev", "tmp", "proc"] : []),
+                isRealDir = p => !filterRoot.includes(p),
+                toAbsolute = root => p => M.join2(root, p),
+                check = M.stat(mountpoint) && FS.readdir(mountpoint).filter(isRealDir).map(toAbsolute(mountpoint));
+            if (!check) T.Err('mount:PATH ERROR');
+            while (check.length) {
+                let path = check.pop();
+                let stat = M.stat(path);
+                if (stat) {
+                    if (FS.isDir(stat.mode)) {
+                        check.push.apply(check, FS.readdir(path).filter(isRealDir).map(toAbsolute(path)))
+                    }
+                    entries[path] = {
+                        timestamp: stat.mtime
+                    }
+    
                 }
-
+            }
+            return entries;
+    
+        }
+        stat(path) {
+            let M = this, FS = M.FS, pathinfo = FS.analyzePath(path);
+            if (pathinfo.exists && pathinfo.object.node_ops && pathinfo.object.node_ops.getattr) {
+                return FS.stat(path);
             }
         }
-        return entries;
-
-    }
-    stat(path) {
-        let M = this, FS = M.FS, pathinfo = FS.analyzePath(path);
-        if (pathinfo.exists && pathinfo.object.node_ops && pathinfo.object.node_ops.getattr) {
-            return FS.stat(path);
+        getFileDataAsTypedArray(node) {
+            if (!node.contents) return new Uint8Array;
+            if (node.contents.subarray) return node.contents.subarray(0, node.usedBytes);
+            return new Uint8Array(node.contents)
         }
-    }
-    getFileDataAsTypedArray(node) {
-        if (!node.contents) return new Uint8Array;
-        if (node.contents.subarray) return node.contents.subarray(0, node.usedBytes);
-        return new Uint8Array(node.contents)
-    }
-    join() {
-        var paths = Array.prototype.slice.call(arguments, 0);
-        return this.normalize(paths.join("/"))
-    }
-
-    join2(l, r) {
-        return this.normalize(l + "/" + r)
-    }
-    normalize(path) {
-        var isAbsolute = path.charAt(0) === "/",
-            trailingSlash = path.substring(-1) === "/";
-        path = this.normalizeArray(path.split("/").filter(p => {
-            return !!p
-        }), !isAbsolute).join("/");
-        if (!path && !isAbsolute) {
-            path = "."
+        join() {
+            var paths = Array.prototype.slice.call(arguments, 0);
+            return this.normalize(paths.join("/"))
         }
-        if (path && trailingSlash) {
-            path += "/"
+    
+        join2(l, r) {
+            return this.normalize(l + "/" + r)
         }
-        return (isAbsolute ? "/" : "") + path
-    }
-
-    normalizeArray(parts, allowAboveRoot) {
-        var up = 0;
-        for (var i = parts.length - 1; i >= 0; i--) {
-            var last = parts[i];
-            if (last === ".") {
-                parts.splice(i, 1)
-            } else if (last === "..") {
-                parts.splice(i, 1);
-                up++
-            } else if (up) {
-                parts.splice(i, 1);
-                up--
+        normalize(path) {
+            var isAbsolute = path.charAt(0) === "/",
+                trailingSlash = path.substring(-1) === "/";
+            path = this.normalizeArray(path.split("/").filter(p => {
+                return !!p
+            }), !isAbsolute).join("/");
+            if (!path && !isAbsolute) {
+                path = "."
             }
-        }
-        if (allowAboveRoot) {
-            for (; up; up--) {
-                parts.unshift("..")
+            if (path && trailingSlash) {
+                path += "/"
             }
+            return (isAbsolute ? "/" : "") + path
         }
-        return parts
-    }
-    ops_write = (stream, buffer, offset, length, position, canOwn) => {
-        let M = this;
-        if (M.HEAP8 && buffer.buffer === M.HEAP8.buffer) {
-            canOwn = false
-        }
-        if (!length) return 0;
-        var node = stream.node;
-        node.timestamp = Date.now();
-        if (buffer.subarray && (!node.contents || node.contents.subarray)) {
-            if (canOwn) {
-                node.contents = buffer.subarray(offset, offset + length);
-                node.usedBytes = length;
-                return length
-            } else if (node.usedBytes === 0 && position === 0) {
-                M.update(stream);
-                node.contents = new Uint8Array(buffer.subarray(offset, offset + length));
-                node.usedBytes = length;
-                return length
-            } else if (position + length <= node.usedBytes) {
-                node.contents.set(buffer.subarray(offset, offset + length), position);
-                return length
-            }
-        }
-        M.MEMFS.expandFileStorage(node, position + length);
-        if (node.contents.subarray && buffer.subarray) node.contents.set(buffer.subarray(offset, offset + length), position);
-        else {
-            for (var i = 0; i < length; i++) {
-                node.contents[position + i] = buffer[offset + i]
-            }
-        }
-        node.usedBytes = Math.max(node.usedBytes, position + length);
-        return length
-    };
-    updatePromise(stream) {
-        let M = this;
-        return new Promise((resolve, reject) => {
-            if (!M.updateList.includes(stream.node.mount)) M.updateList.push(stream.node.mount);
-            let Timer = setInterval(() => {
-                if (M.updateTime && Timer != M.updateTime) {
-                    clearInterval(Timer);
-                    reject('other update');
+    
+        normalizeArray(parts, allowAboveRoot) {
+            var up = 0;
+            for (var i = parts.length - 1; i >= 0; i--) {
+                var last = parts[i];
+                if (last === ".") {
+                    parts.splice(i, 1)
+                } else if (last === "..") {
+                    parts.splice(i, 1);
+                    up++
+                } else if (up) {
+                    parts.splice(i, 1);
+                    up--
                 }
-                if (stream.fd == null) {
-                    clearInterval(Timer);
-                    resolve('ok');
+            }
+            if (allowAboveRoot) {
+                for (; up; up--) {
+                    parts.unshift("..")
                 }
-            }, M.speed);
-            M.updateTime = Timer;
-        });
-    }
-    updatePath = [];
-    updateList = [];
-    async updateMount() {
-        let M = this;
-        if (M.updateList.length) {
-            let list = M.updateList.map(async mount => M.syncfs(mount, e => console.log(e)));
-            M.updateList = [];
-            M.updatePath = [];
-            await Promise.all(list);
+            }
+            return parts
         }
-    }
-    getStoreName(mount) {
-        if (!mount.mountpoint) return false;
-        return this.StoreMap[mount.mountpoint];
-    }
-    update(stream) {
-        let M = this;
-        if (!M.getStoreName(stream.node.mount)) return;
-        if (stream.path && stream.fd != null && !M.updatePath.includes(stream.path)) {
-            M.updatePath.push(stream.path)
-            M.updatePromise(stream).then(result => M.updateMount());
-        }
-    }
-    MKFILE(path, data, bool) {
-        let FS = this.FS,
-            dir = path.split('/');
-        if (dir.length) dir = dir.slice(0, -1).join('/');
-        else dir = '/';
-        if (!FS.analyzePath(dir).exists) {
-            let pdir = dir.split('/').slice(0, -1).join('/');
-            if (!FS.analyzePath(pdir).exists) FS.createPath('/', pdir, !0, !0);
-            FS.createPath('/', dir, !0, !0);
-        }
-        if (typeof data == 'string') data = new TextEncoder().encode(data);
-        if (bool) {
-            if (FS.analyzePath(path).exists) FS.unlink(path);
-            FS.writeFile(path, data, {
-                canOwn: true,
-                encoding: "binary"
-            });
-        } else if (!FS.analyzePath(path).exists) {
-            FS.writeFile(path, data, {
-                canOwn: true,
-                encoding: "binary"
+        ops_write = (stream, buffer, offset, length, position, canOwn) => {
+            let M = this;
+            if (M.HEAP8 && buffer.buffer === M.HEAP8.buffer) {
+                canOwn = false
+            }
+            if (!length) return 0;
+            var node = stream.node;
+            node.timestamp = Date.now();
+            if (buffer.subarray && (!node.contents || node.contents.subarray)) {
+                if (canOwn) {
+                    node.contents = buffer.subarray(offset, offset + length);
+                    node.usedBytes = length;
+                    return length
+                } else if (node.usedBytes === 0 && position === 0) {
+                    M.update(stream);
+                    node.contents = new Uint8Array(buffer.subarray(offset, offset + length));
+                    node.usedBytes = length;
+                    return length
+                } else if (position + length <= node.usedBytes) {
+                    node.contents.set(buffer.subarray(offset, offset + length), position);
+                    return length
+                }
+            }
+            M.MEMFS.expandFileStorage(node, position + length);
+            if (node.contents.subarray && buffer.subarray) node.contents.set(buffer.subarray(offset, offset + length), position);
+            else {
+                for (var i = 0; i < length; i++) {
+                    node.contents[position + i] = buffer[offset + i]
+                }
+            }
+            node.usedBytes = Math.max(node.usedBytes, position + length);
+            return length
+        };
+        updatePromise(stream) {
+            let M = this;
+            return new Promise((resolve, reject) => {
+                if (!M.updateList.includes(stream.node.mount)) M.updateList.push(stream.node.mount);
+                let Timer = setInterval(() => {
+                    if (M.updateTime && Timer != M.updateTime) {
+                        clearInterval(Timer);
+                        reject('other update');
+                    }
+                    if (stream.fd == null) {
+                        clearInterval(Timer);
+                        resolve('ok');
+                    }
+                }, M.speed);
+                M.updateTime = Timer;
             });
         }
-    }
-    WriteRooms(path, data) {
-        if (this.Module.customRoomPath) path = this.Module.customRoomPath;
-        else path = '/rooms/' + this.T.F.getname(path);
-        this.MKFILE(path, data, true);
-        return path;
-    }
-}
+        updatePath = [];
+        updateList = [];
+        async updateMount() {
+            let M = this;
+            if (M.updateList.length) {
+                let list = M.updateList.map(async mount => M.syncfs(mount, e => console.log(e)));
+                M.updateList = [];
+                M.updatePath = [];
+                await Promise.all(list);
+            }
+        }
+        update(stream) {
+            let M = this;
+            if (!M.getStore(stream.node.mount)) return;
+            if (stream.path && stream.fd != null && !M.updatePath.includes(stream.path)) {
+                M.updatePath.push(stream.path)
+                M.updatePromise(stream).then(result => M.updateMount());
+            }
+        }
+        MKFILE(path, data, bool) {
+            let FS = this.FS,
+                dir = path.split('/');
+            if (dir.length) dir = dir.slice(0, -1).join('/');
+            else dir = '/';
+            if (!FS.analyzePath(dir).exists) {
+                let pdir = dir.split('/').slice(0, -1).join('/');
+                if (!FS.analyzePath(pdir).exists) FS.createPath('/', pdir, !0, !0);
+                FS.createPath('/', dir, !0, !0);
+            }
+            if (typeof data == 'string') data = new TextEncoder().encode(data);
+            if (bool) {
+                if (FS.analyzePath(path).exists) FS.unlink(path);
+                FS.writeFile(path, data, {
+                    canOwn: true,
+                    encoding: "binary"
+                });
+            } else if (!FS.analyzePath(path).exists) {
+                FS.writeFile(path, data, {
+                    canOwn: true,
+                    encoding: "binary"
+                });
+            }
+        }
+    }(this);
+};
