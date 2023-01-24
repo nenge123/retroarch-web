@@ -5,7 +5,7 @@ const RetroArch = new class NengeStart {
         T.docload(async e => {
             T.DB_NAME = 'RetroArch_WEB';
             T.LibStore = 'data-libjs';
-            T.version = 4;
+            T.version = 5;
             T.DB_STORE_MAP = {
                 'data-rooms': {},
                 'data-info': { 'system': false },
