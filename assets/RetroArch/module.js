@@ -50,12 +50,8 @@ class NengeModule {
         M.arguments[1] = filename;
         M.callMain(M.arguments);
     }
-    print(text) {
-        this.replaceLog(text);
-    }
-    printErr(text) {
-        this.replaceLog(text);
-    }
+    print = text=>this.replaceLog(text);
+    printErr = text=>this.replaceLog(text);
     monitorRunDependencies(left) {
         this.totalDependencies = Math.max(this.totalDependencies, left);
     }
@@ -132,7 +128,7 @@ class NengeModule {
             'return WebAssembly.instantiate(binary, info).catch(e=>alert(JSON.stringify(e)))'
         ).replace(
             /function\s?_emscripten_set_main_loop_timing\(mode,\s?value\)\s?\{/,
-            "function _emscripten_set_main_loop_timing(mode, value) {if(mode!=1){alert(mode)};console.log('动画运行:'+mode);"
+            "function _emscripten_set_main_loop_timing(mode, value) {if(mode!=1){};console.log('动画运行:'+mode);"
         );
     }
     get DFS(){

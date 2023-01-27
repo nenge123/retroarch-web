@@ -5,7 +5,7 @@ const RetroArch = new class NengeStart {
         T.docload(async e => {
             T.DB_NAME = 'RetroArch_WEB';
             T.LibStore = 'data-libjs';
-            T.version = 5;
+            T.version = 6;
             T.DB_STORE_MAP = {
                 'data-rooms': {},
                 'data-info': { 'system': false },
@@ -401,6 +401,9 @@ const RetroArch = new class NengeStart {
             T.$('.g-btn-addContent').hidden = true;
             T.$('.g-btn-forward').hidden = false;
             T.Controller = new NengeController(T);
+            Module.runaction('replaceArguments');
+            Module.runaction('replaceController',[T.Controller]);
+            console.log(Module.arguments);
             Module.callMain(Module.arguments);
             Module.running = true;
         },
@@ -549,7 +552,7 @@ const RetroArch = new class NengeStart {
         }
         let installjs = coreInfo.installjs||systemInfo.installjs;
         if(installjs){
-            let loaderUrl = /^http/.test(installjs) ? installjs : Module.JSpath + 'loader/' + installjs;
+            let loaderUrl = /^http/.test(installjs) ? installjs : Module.JSpath + 'loader/' + installjs+'?'+Math.random();
             let coresLoader = await T.FetchItem({ url: loaderUrl, type: 'text', key: 'system-' + Module.coreKey});
             if (coresLoader) {
                 await T.addJS(coresLoader);
@@ -678,7 +681,13 @@ const RetroArch = new class NengeStart {
             }
         },
         'snes': {
-            name: 'SNES'
+            name: 'SNES',
+            cores:{
+                'snes9x':{
+                    url:'snes9x_libretro.zip',
+                    support: 'nes',
+                }
+            }
         },
         'nds': {
             name: 'NDS'
@@ -708,7 +717,27 @@ const RetroArch = new class NengeStart {
                     url: 'emulatorjs/psx-wasm.7z',
                     system: 'psx',
                     support: 'psx',
-                }
+                },
+                "gba":{
+                    system: 'gba',
+                    support: 'gba|gb',
+                },
+                "gb":{
+                    system: 'gb',
+                    support: 'gb',
+                },
+                "nes":{
+                    system: 'nes',
+                    support: 'nes',
+                },
+                "snes":{
+                    system: 'snes',
+                    support: 'snes',
+                },
+                "nds":{
+                    system: 'nds',
+                    support: 'nds',
+                },
             }
         }
         /*
