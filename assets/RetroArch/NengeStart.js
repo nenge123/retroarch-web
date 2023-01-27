@@ -745,6 +745,9 @@ const RetroArch = new class NengeStart {
                 },
                 "n64":{
                     system: 'n64',
+             cores:{ 
+                 
+                    url:
                     support: 'n64',
                 },
             }
