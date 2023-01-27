@@ -5,7 +5,7 @@ const RetroArch = new class NengeStart {
         T.docload(async e => {
             T.DB_NAME = 'RetroArch_WEB';
             T.LibStore = 'data-libjs';
-            T.version = 6;
+            T.version = 7;
             T.DB_STORE_MAP = {
                 'data-rooms': {},
                 'data-info': { 'system': false },
@@ -405,6 +405,7 @@ const RetroArch = new class NengeStart {
             Module.runaction('replaceController',[T.Controller]);
             console.log(Module.arguments);
             Module.callMain(Module.arguments);
+            console.log(Module.arguments);
             Module.running = true;
         },
         DefaultRun(path) {
@@ -737,6 +738,14 @@ const RetroArch = new class NengeStart {
                 "nds":{
                     system: 'nds',
                     support: 'nds',
+                },
+                "arcade":{
+                    system: 'zip',
+                    support: 'zip',
+                },
+                "n64":{
+                    system: 'n64',
+                    support: 'n64',
                 },
             }
         }

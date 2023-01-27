@@ -56,28 +56,6 @@ class NengeInstall {
                 }
             });
         }
-        Module.action['replaceController'] = Controller=>{
-            Controller.keyMap = {};
-            let simulate_input = Module.cwrap('simulate_input', 'null', ['number', 'number', 'number']);
-            let keyEventList = {}; 
-            I.toArr(this.defaultControllers,entry=>{
-                if(entry[1].value2 != undefined){
-                    keyEventList[Controller.Reflect[this.keyMap[entry[1].value]]] = entry[0];
-                    Controller.keyMap[this.keyMap[entry[1].value].toLowerCase()] = entry[0];
-                }
-            });
-            Controller.action['EnterKey'] = (keylist,type)=>{
-                keylist.forEach(
-                    v=>simulate_input(0,v,type?1:0)
-                );
-            };
-            T.on(document,'keyup',e=>{
-                if(keyEventList[e.code] != undefined)simulate_input(0,keyEventList[e.code],0);
-            });
-            T.on(document,'keydown',e=>{
-                if(keyEventList[e.code] != undefined)simulate_input(0,keyEventList[e.code],1);
-            });
-        }
         T.I.toArr(corefile,entry=>{
             if(/\.js$/.test(entry[0])){
                 Module.CacheFile[entry[0]] = new TextDecoder().decode(entry[1]);
@@ -96,40 +74,39 @@ class NengeInstall {
             asmjs = asmjs.replace(Module.FileLoder + '.mem', T.F.URL(Module.memBinary, T.F.gettype()));
             delete Module.memBinary;
         }
-        asmjs = Module.replaceAsmJs(asmjs);
-        (new Function('Module',asmjs+"if (typeof EmulatorJS_ != 'undefined')EmulatorJS_(Module);else if (typeof EmulatorJS != 'undefined')EmulatorJS(Module);"))(Module);
+        Module.needKey = true;
+        asmjs = asmjs.replace(
+            /if\*\(eventHandler.callbackfunc\)\s*\{/,
+            'if (eventHandler.callbackfunc) {console.log(eventHandler);'
+        ).replace(
+            /JSEvents\.registerOrRemoveHandler\(eventHandler\)/g,
+            'console.log(eventHandler);if(!eventHandler.target){if(/^key/.test(eventHandler.eventTypeString)){Module.needKey=false;eventHandler.target=document;}else if(/^mouse/.test(eventHandler.eventTypeString)){eventHandler.target=Module.canvas;}else return;}JSEvents.registerOrRemoveHandler(eventHandler);'
+        ).replace(
+            /__getBoundingClientRect\(e\)\s*\{/,
+            '__getBoundingClientRect(e) { return Module.canvas.getBoundingClientRect();'
+        );
         //asmjs = Module.replaceAsmJs(asmjs);
-        if(Module.hashKey2&&Module._get_content_crc){
-            L.hash = Module.hashKey2;
-        }
-
-        Module.arguments.push(L.hash);
+        //await T.addJS(asmjs+";;");
+        //if (typeof EmulatorJS_ != 'undefined'){EmulatorJS_(Module);Module.newCore=true;}else if (typeof EmulatorJS != 'undefined'){EmulatorJS(Module);}
+        
+        (new Function('Module',asmjs+";;if (typeof EmulatorJS_ != 'undefined'){EmulatorJS_(Module);Module.newCore=true;}else if (typeof EmulatorJS != 'undefined'){EmulatorJS(Module);}"))(Module);
         [
-            '/userdata',
-            '/system',
-            '/shaders',
-            '/userdata/saves',
-            '/userdata/states',
-            '/userdata/screenshots',
-            '/userdata/cheats',
-            '/userdata/rooms',
-            '/userdata/rooms/downloads',
-            '/userdata/config',
-            '/userdata/config/remaps',
-            '/userdata/thumbnails',
-            '/etc',
-            '/rooms',
+            'userdata',
+            'system',
+            'shader',
+            'etc',
+            'rooms',
         ].forEach(dir=>Module.FS.createPath('/',dir,!0,!0));
-        Module.DFS.MKFILE('/etc/retroarch.cfg',this.runaction('getCfg'));
         await T.FetchItem({
-            url:Module.JSpath+'frontend/shader.zip',
+            url:Module.JSpath+'frontend/shader.zip?'+T.time,
             key:'emulatorjs-shader',
             store:T.LibStore,
             unpack:true,
+            version:T.version,
             success(data){
                 T.I.toArr(data,entry=>{
-                    Module.DFS.MKFILE('/bundle/shaders/'+entry[0],entry[1]);
-                    loghtml+='<p>/bundle/shaders/'+entry[0]+'</p>';
+                    Module.DFS.MKFILE('shader/'+entry[0],entry[1]);
+                    loghtml+='<p>shader/'+entry[0]+'</p>';
                 });
             }
         });
@@ -137,29 +114,94 @@ class NengeInstall {
         Module.addMount('/userdata');
         Module.action['DiskReadyOut'] = txt => loghtml && (loghtml += txt.split('\n').map(t => `<p>${t}</p>`).join(''));
         await Module.getMountStatus();
+        [
+            
+            'userdata/saves',
+            'userdata/saves/'+Module.core,
+            'userdata/states',
+            'userdata/screenshots',
+            'userdata/cheats',
+            'rooms/downloads',
+            'userdata/config',
+            'userdata/config/remaps',
+            'userdata/thumbnails',
+        ].forEach(dir=>!Module.FS.analyzePath(dir).exists&&Module.FS.createPath('/',dir,!0,!0));
+        Module.DFS.MKFILE('/etc/retroarch.cfg',this.runaction('getCfg'));
+        Module.DFS.MKFILE('/shader/shader.glslp','');
         Nttr('.system-cores-list').remove();
         T.$('.g-start-ui').remove();
         T.$('.g-game-ui').hidden = false;
         T.$('.g-FS-log').innerHTML = loghtml;
+        Module.action['replaceController'] = Controller=>{
+            Controller.keyMap = {};
+            let simulate_input = Module.cwrap('simulate_input', 'null', ['number', 'number', 'number']);
+            let keyEventList = {}; 
+            I.toArr(this.defaultControllers,entry=>{
+                if(entry[1].value2 != undefined){
+                    keyEventList[Controller.Reflect[this.keyMap[entry[1].value]]] = entry[0];
+                    Controller.keyMap[this.keyMap[entry[1].value].toLowerCase()] = entry[0];
+                }
+            });
+            Controller.action['EnterKey'] = (keylist,type)=>{
+                keylist.forEach(
+                    v=>simulate_input(0,v,type?1:0)
+                );
+            };
+            if(Module.needKey){
+                T.on(document,'keyup',e=>{
+                    if(keyEventList[e.code] != undefined)simulate_input(0,keyEventList[e.code],0);
+                });
+                T.on(document,'keydown',e=>{
+                    if(keyEventList[e.code] != undefined)simulate_input(0,keyEventList[e.code],1);
+                });
+            }
+        }
+        if(Module._fast_forward){
+            Nttr('.g-btn-forward').click(function(){
+                this.classList.toggle('active');
+                Module._fast_forward(this.classList.contains('active')?1:0);
+            });
+        }
+        //asmjs = Module.replaceAsmJs(asmjs);
+        if(Module.newCore){
+            L.hash = Module.hashKey;
+        }
+        if(Module._get_content_crc){
+            L.hash = Module.hashKey2;
+        }
+        Module.arguments.push(L.hash);
         await this.S.runaction('DefaultBios');
         await this.S.runaction('DefaultRooms');
     }
     //var _0x2ee59a = _0xc73c4['data']['slice'] ? _0xc73c4['data']['slice'](0xc) : _0xc73c4['data']['subarray'](0xc);
     //_0x2ee59a['set']([0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c, 0x0, 0x3], 0x0), _0x54fa0b(_0x2ee59a);
     action = {
+        /**
+         * 
+         * @returns savefile_directory = /data/saves/gb
+system_directory = /
+video_vsync = true
+screenshot_directory = /
+video_shader = /shader/shader.glslp
+video_shader_enable = true
+video_font_enable = false
+video_scale = 1.0
+video_gpu_screenshot = false
+video_smooth = false
+         */
         getCfg(){
             return 'menu_mouse_enable = "true"' +
             '\nmenu_pointer_enable = "true"' +
-            '\nsavefile_directory = "userdata/saves"' +
-            '\nsavestate_directory = "userdata/states"' +
-            '\nscreenshot_directory = "userdata/screenshots"' +
-            '\nsystem_directory = "system/"' +
-            '\nrgui_browser_directory = "userdata/rooms"' +
-            '\ncore_assets_directory = "userdata/rooms/downloads"' +
-            '\ncheat_database_path = "userdata/cheats"' +
-            '\nrgui_config_directory = "userdata/config"' +
-            '\ninput_remapping_directory = "userdata/config/remaps"' +
-            '\nthumbnails_directory = "userdata/thumbnails"'+
+            '\nsavefile_directory = "/userdata/saves"' +
+            '\nsavestate_directory = "/userdata/states"' +
+            '\nscreenshot_directory = "/userdata/screenshots"' +
+            '\nsystem_directory = "/system"' +
+            '\nrgui_browser_directory = "/rooms"' +
+            '\ncore_assets_directory = "/userdata/rooms/downloads"' +
+            '\ncheat_database_path = "/userdata/cheats"' +
+            '\nrgui_config_directory = "/userdata/config"' +
+            '\ninput_remapping_directory = "/userdata/config/remaps"' +
+            '\nthumbnails_directory = "/userdata/thumbnails"'+
             '\nautosave_interval = "1"' +
             '\ncamera_allow = "false"' +
             '\ncamera_driver = "null"' +
@@ -169,10 +211,11 @@ class NengeInstall {
             '\nvideo_font_enable = false' +
             '\nvideo_scale = 1.0' +
             '\nfastforward_ratio = 1.0' +
+            '\nvideo_gpu_screenshot = false'+
             '\nvideo_smooth = false' +
             '\nauto_screenshot_filename = "false"' +
-            '\nvideo_shader = "/shaders/shader.glslp"' +
-            '\nvideo_shader_dir = "/shaders"';
+            '\nvideo_shader = "/shader/shader.glslp"' +
+            '\nvideo_shader_dir = "/shader"';
         }
     };
     buttons = {
