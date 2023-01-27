@@ -710,7 +710,7 @@ const RetroArch = new class NengeStart {
             }
         },
         'emulatorjs':{
-            name:"www.emulator.com",
+            name:"www.emulatorjs.com",
             installjs:"emulator_install.js",
             "cores":{
                 "psx":{
