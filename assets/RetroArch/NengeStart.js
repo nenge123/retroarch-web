@@ -740,7 +740,7 @@ const RetroArch = new class NengeStart {
                     support: 'nds',
                 },
                 "arcade":{
-                    system: 'zip',
+                    system: 'arcade',
                     support: 'zip',
                 },
                 "n64":{
